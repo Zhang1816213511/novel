@@ -1,0 +1,23 @@
+{
+  "name": "novel-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:preview": "vite build --mode preview",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .vue,.js,.ts"
+  },
+  "dependencies": {
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0",
+    "pinia": "^2.1.7",
+    "axios": "^1.6.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.0",
+    "sass": "^1.77.0"
+  }
+}

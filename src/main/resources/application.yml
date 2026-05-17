@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: novel
+
+  # SQLite 本地数据库配置
+  datasource:
+    url: jdbc:sqlite:data/novel.db
+    driver-class-name: org.sqlite.JDBC
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.novel.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+knife4j:
+  enable: true
+
+# Caffeine 缓存基础配置
+cache:
+  expire: 3600
