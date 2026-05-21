@@ -2,6 +2,9 @@ package com.novel.config;
 
 import com.novel.entity.ModelConfig;
 import com.novel.service.ModelConfigService;
+import io.agentscope.core.model.Model;
+import io.agentscope.core.model.OllamaChatModel;
+import io.agentscope.core.model.OpenAIChatModel;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +23,6 @@ public class AgentScopeConfig {
     @Autowired
     private ModelConfigService modelConfigService;
 
-    /**
-     * Simple in-memory model registry.
-     * Maps model name -> provider-specific config map.
-     */
     private final Map<String, Map<String, String>> modelRegistry = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -55,5 +54,33 @@ public class AgentScopeConfig {
 
     public Map<String, Map<String, String>> getAllModels() {
         return modelRegistry;
+    }
+
+    /**
+     * 根据模型名称构建 AgentScope Model 对象
+     */
+    public Model buildModel(String name) {
+        Map<String, String> config = modelRegistry.get(name);
+        if (config == null) {
+            throw new IllegalArgumentException("Model not found: " + name);
+        }
+
+        String provider = config.get("provider");
+        String baseUrl = config.get("baseUrl");
+        String apiKey = config.get("apiKey");
+        String modelName = config.get("modelName");
+
+        if ("ollama".equals(provider)) {
+            return OllamaChatModel.builder()
+                    .baseUrl(baseUrl)
+                    .modelName(modelName)
+                    .build();
+        }
+
+        return OpenAIChatModel.builder()
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .modelName(modelName)
+                .build();
     }
 }

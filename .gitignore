@@ -57,4 +57,5 @@ web/dist/
 /.claude/
 /.mvn/
 /data/
-/data/
+/data/novel.db
+

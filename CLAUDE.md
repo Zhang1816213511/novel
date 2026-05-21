@@ -14,7 +14,7 @@
 | ORM | MyBatis-Plus 3.5.6 |
 | 数据库 | SQLite（`data/novel.db`，首次启动自动创建） |
 | 缓存 | Caffeine（Spring `@Cacheable`，60min TTL） |
-| AI 模型层 | AgentScope + openai-java（支持 Ollama 本地 + OpenAI 兼容 API） |
+| AI 模型层 | AgentScope（ReActAgent + SequentialPipeline，支持 Ollama 本地 + OpenAI 兼容 API） |
 | API 文档 | Knife4j 4.5（`/doc.html`） |
 | 前端 | Vue 3.4 + Vite 5 + Hash 路由 |
 | 打包方式 | `java -jar` 单文件运行，Vue 构建产物输出到 `src/main/resources/static/` |
@@ -27,7 +27,7 @@ novel/
 ├── config/                        数据源、MyBatis-Plus、Web、Knife4j、AgentScope 配置
 ├── common/                        Result<T> 统一返回、全局异常处理
 ├── controller/                    REST API
-├── service/                       业务逻辑 + Caffeine 缓存
+├── service/                       业务逻辑 + AgentScope 双智能体管道 + Caffeine 缓存
 ├── mapper/                        MyBatis-Plus Mapper
 ├── entity/                        实体（Novel, ModelConfig）
 ├── dto/                           请求/响应 DTO
@@ -90,9 +90,13 @@ novel/
 - Caffeine 本地缓存 `Cache<Long, Novel>`，60 分钟过期，仅缓存单篇查询
 - 更新/删除时 `cache.invalidate(id)`
 
-### LLM 生成机制
-- `NovelGenerationService` 提供 4 个同步生成方法（简介/大纲/章节梗概/章节正文）
-- 使用双 prompt 模式：先由创作助手生成，再由编辑审查（检测是否含"合格"），最多重试 3 次
+### LLM 生成机制（AgentScope 双智能体管道）
+- `NovelGenerationService` 提供 4 个同步生成方法（简介/大纲/章节梗概/章节正文），委托给 `AgentPipelineService`
+- `AgentPipelineService` 使用 AgentScope 的 `SequentialPipeline` 串联两个 `ReActAgent`：
+  1. **Writer 智能体** — 根据用户提示生成内容（创作助手角色）
+  2. **Reviewer 智能体** — 审查内容质量，合格时在第一行输出「合格」并附原文，否则给出修改建议
+- 最多重试 3 次，每次将修改意见附加到提示中重新生成，达到最大次数后直接输出结果
+- `AgentScopeConfig.buildModel(name)` 根据 DB 配置构建 `OpenAIChatModel` 或 `OllamaChatModel`
 - 章节梗概生成时自动传入前几章的梗概作为上下文，确保情节连贯
 - 章节正文生成时自动传入上一章正文末尾 500 字作为衔接参考
 

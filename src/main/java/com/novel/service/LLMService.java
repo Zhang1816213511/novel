@@ -3,6 +3,7 @@ package com.novel.service;
 import com.novel.config.AgentScopeConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,7 +18,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class LLMService {
 
-    private final AgentScopeConfig agentScopeConfig;
+    @Autowired
+    private AgentScopeConfig agentScopeConfig;
     private final RestTemplate restTemplate = new RestTemplate();
 
     /**

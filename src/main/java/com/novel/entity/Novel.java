@@ -25,4 +25,5 @@ public class Novel {
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
+
 }

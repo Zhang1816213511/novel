@@ -4,6 +4,7 @@ import com.novel.entity.Chapter;
 import com.novel.entity.Novel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,14 +15,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NovelGenerationService {
 
-    private static final int MAX_RETRIES = 3;
+    @Autowired
+    private final AgentPipelineService agentPipelineService;
 
-    private final LLMService llmService;
-    private final NovelService novelService;
-    private final ChapterService chapterService;
+    @Autowired
+    private NovelService novelService;
 
-    private static final String GEN_SYSTEM = "你是一位专业的小说创作助手，擅长创作引人入胜的故事情节。你的文笔优美，叙事流畅。";
-    private static final String REV_SYSTEM = "你是一位资深小说编辑，请检查内容质量。合格请回复「合格」，否则给出具体修改建议。";
+    @Autowired
+    private ChapterService chapterService;
+
+    private static final String WRITER_SYSTEM = "你是一位专业的小说创作助手，擅长创作引人入胜的故事情节。你的文笔优美，叙事流畅。请直接输出内容，不要额外说明。";
+    private static final String REVIEWER_SYSTEM = "你是一位资深小说编辑，请检查内容质量。如果合格，请在第一行回复「合格」，然后完整输出全部原文内容。如果不合格，请给出具体修改建议，不要包含原文。";
 
     /**
      * 根据作品标题生成简介
@@ -30,7 +34,7 @@ public class NovelGenerationService {
         Novel novel = novelService.getById(novelId);
         if (novel == null) throw new IllegalArgumentException("作品不存在: " + novelId);
 
-        String synopsis = generateWithReview(modelName,
+        String synopsis = agentPipelineService.generateWithReview(modelName, WRITER_SYSTEM, REVIEWER_SYSTEM,
             "请根据以下小说标题，创作一份作品简介（200-300字），包含故事背景和核心冲突。\n\n标题：" + novel.getTitle());
 
         novel.setSynopsis(synopsis);
@@ -48,7 +52,7 @@ public class NovelGenerationService {
         if (novel.getSynopsis() == null || novel.getSynopsis().isBlank())
             throw new IllegalStateException("请先生成作品简介");
 
-        String outline = generateWithReview(modelName,
+        String outline = agentPipelineService.generateWithReview(modelName, WRITER_SYSTEM, REVIEWER_SYSTEM,
             "请根据以下作品简介，创作完整的小说大纲（开端、发展、高潮、结局）。\n\n简介：" + novel.getSynopsis());
 
         novel.setOutline(outline);
@@ -69,7 +73,6 @@ public class NovelGenerationService {
         Chapter chapter = chapterService.getById(chapterId);
         if (chapter == null) throw new IllegalArgumentException("章节不存在: " + chapterId);
 
-        // 获取之前章节的梗概作为上下文
         List<Chapter> allChapters = chapterService.listByNovelId(novelId);
         String previousSummaries = allChapters.stream()
             .filter(c -> c.getChapterNumber() < chapter.getChapterNumber())
@@ -85,7 +88,7 @@ public class NovelGenerationService {
             prompt.append("请确保新章节的梗概与前一章节自然衔接，情节连贯。\n");
         }
 
-        String summary = generateWithReview(modelName, prompt.toString());
+        String summary = agentPipelineService.generateWithReview(modelName, WRITER_SYSTEM, REVIEWER_SYSTEM, prompt.toString());
 
         chapter.setSummary(summary);
         chapterService.updateById(chapter);
@@ -127,30 +130,11 @@ public class NovelGenerationService {
                 .append("\n\n");
         }
 
-        String content = generateWithReview(modelName, prompt.toString());
+        String content = agentPipelineService.generateWithReview(modelName, WRITER_SYSTEM, REVIEWER_SYSTEM, prompt.toString());
 
         chapter.setContent(content);
         chapterService.updateById(chapter);
         log.info("Content generated for chapter {} of novel {}", chapter.getChapterNumber(), novelId);
         return content;
-    }
-
-    // ========== Internal ==========
-
-    private String generateWithReview(String modelName, String prompt) {
-        for (int attempt = 0; attempt < MAX_RETRIES; attempt++) {
-            String result = llmService.chat(modelName, GEN_SYSTEM, prompt + "\n\n请直接输出内容，不要额外说明。");
-            String review = llmService.chat(modelName, REV_SYSTEM,
-                "请审查以下内容，合格请回复「合格」，否则指出问题：\n\n" + result);
-
-            if (review != null && review.contains("合格")) {
-                return result;
-            }
-
-            log.warn("Review failed attempt {}/{}: {}", attempt + 1, MAX_RETRIES, review);
-            prompt += "\n\n修改意见：" + review + "\n请根据意见修改。";
-        }
-        log.warn("Max retries reached, using last result");
-        return llmService.chat(modelName, GEN_SYSTEM, prompt + "\n\n请直接输出内容，不要额外说明。");
     }
 }
