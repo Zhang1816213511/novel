@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -20,6 +22,9 @@ public class AgentPipelineService {
 
     @Autowired
     private AgentScopeConfig agentScopeConfig;
+
+    @Autowired
+    private PromptLoader promptLoader;
 
     /**
      * 使用 Writer + Reviewer 双智能体管道生成内容
@@ -65,13 +70,16 @@ public class AgentPipelineService {
                     reviewerOutput != null ? reviewerOutput.substring(0, Math.min(100, reviewerOutput.length())) : "null");
 
             if (attempt < MAX_RETRIES - 1) {
-                currentPrompt = userPrompt + "\n\n【修改意见】\n" + reviewerOutput + "\n请根据上述修改意见重新生成内容。";
+                String retrySuffix = promptLoader.get("retry-modification",
+                        Map.of("reviewerOutput", reviewerOutput != null ? reviewerOutput : ""));
+                currentPrompt = userPrompt + retrySuffix;
             }
         }
 
         // 最大重试次数后直接生成
         log.warn("Max retries reached, generating final result without review");
-        ReActAgent writer = buildWriter(model, writerSysPrompt + "\n\n请直接输出内容，不要额外说明。");
+        String fallback = promptLoader.get("writer-fallback");
+        ReActAgent writer = buildWriter(model, writerSysPrompt + "\n\n" + fallback);
         Msg finalResult = writer.call(Msg.builder().textContent(currentPrompt).build()).block();
         return finalResult != null ? finalResult.getTextContent() : "";
     }
