@@ -1,18 +1,29 @@
 package com.novel.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import javax.sql.DataSource;
+import java.io.File;
 import java.sql.Statement;
 
 @Configuration
 public class DataSourceConfig {
 
+    @Value("${app.datadir:data}")
+    private String dataDir;
+
     @Bean
     public DataSource dataSource() {
+        // 确保数据目录存在
+        File dir = new File(dataDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        String url = "jdbc:sqlite:" + dataDir + "/novel.db";
         org.sqlite.SQLiteDataSource ds = new org.sqlite.SQLiteDataSource();
-        ds.setUrl("jdbc:sqlite:data/novel.db");
+        ds.setUrl(url);
 
         try (var conn = ds.getConnection(); Statement stmt = conn.createStatement()) {
             stmt.executeUpdate(

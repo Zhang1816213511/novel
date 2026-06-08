@@ -1,0 +1,36 @@
+{
+  "appId": "com.novel.writer",
+  "productName": "NovelWriter",
+  "directories": {
+    "output": "electron-dist"
+  },
+  "files": [
+    "electron/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "target/novel-1.0.0.jar",
+      "to": "backend/novel-1.0.0.jar"
+    },
+    {
+      "from": "build-runtime",
+      "to": "backend/runtime"
+    }
+  ],
+  "win": {
+    "target": "nsis",
+    "artifactName": "${productName}-Setup-${version}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "NovelWriter",
+    "uninstallDisplayName": "NovelWriter ${version}"
+  },
+  "asar": true,
+  "compression": "maximum",
+  "removePackageScripts": true
+}

@@ -7,7 +7,7 @@ spring:
 
   # SQLite 本地数据库配置
   datasource:
-    url: jdbc:sqlite:data/novel.db
+    url: jdbc:sqlite:${app.datadir:data}/novel.db
     driver-class-name: org.sqlite.JDBC
 
 mybatis-plus:
