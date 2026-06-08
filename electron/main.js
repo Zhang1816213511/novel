@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
@@ -134,10 +134,13 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     title: 'NovelWriter',
-    // icon: path.join(__dirname, 'icon.png'), // 如需自定义图标，放一个 icon.png 在此目录
+    icon: path.join(__dirname, 'icon.ico'),
+    frame: false,
+    backgroundColor: '#1e293b',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
     },
     show: false,
   });
@@ -145,7 +148,18 @@ function createWindow() {
   mainWindow.loadURL('http://localhost:8080');
   mainWindow.once('ready-to-show', () => mainWindow.show());
   mainWindow.on('closed', () => { mainWindow = null; });
+  mainWindow.on('maximize', () => mainWindow?.webContents.send('window-maximize-change', true));
+  mainWindow.on('unmaximize', () => mainWindow?.webContents.send('window-maximize-change', false));
 }
+
+// ─── 窗口控制 IPC ────────────────────────────────────────
+ipcMain.on('window-minimize', () => mainWindow?.minimize());
+ipcMain.on('window-maximize', () => {
+  if (mainWindow?.isMaximized()) mainWindow.unmaximize();
+  else mainWindow?.maximize();
+});
+ipcMain.on('window-close', () => mainWindow?.close());
+ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized());
 
 // ─── App 生命周期 ────────────────────────────────────────
 app.whenReady().then(async () => {

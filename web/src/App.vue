@@ -1,6 +1,36 @@
 <template>
   <div class="app-layout">
-    <aside class="sidebar">
+    <!-- Electron 自定义标题栏 -->
+    <div class="titlebar" v-if="isElectron">
+      <div class="titlebar-drag">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        <span class="titlebar-title">写作助手</span>
+      </div>
+      <div class="titlebar-controls">
+        <button class="tb-btn tb-btn-minimize" @click="minimize" title="最小化">
+          <svg viewBox="0 0 12 12" width="12" height="12"><rect y="5" width="12" height="1.5" fill="currentColor"/></svg>
+        </button>
+        <button class="tb-btn tb-btn-maximize" @click="toggleMax" title="最大化">
+          <svg v-if="!isMaxed" viewBox="0 0 12 12" width="12" height="12">
+            <rect x="1" y="1" width="10" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          </svg>
+          <svg v-else viewBox="0 0 12 12" width="12" height="12">
+            <rect x="3" y="0.5" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/>
+            <rect x="0.5" y="3" width="8" height="8" rx="1" fill="var(--color-sidebar-bg)" stroke="currentColor" stroke-width="1.3"/>
+          </svg>
+        </button>
+        <button class="tb-btn tb-btn-close" @click="closeWin" title="关闭">
+          <svg viewBox="0 0 12 12" width="12" height="12">
+            <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <aside class="sidebar" :class="{ 'has-titlebar': isElectron }">
       <div class="sidebar-header">
         <div class="logo">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
@@ -36,7 +66,7 @@
         <span class="version">v1.0.0</span>
       </div>
     </aside>
-    <main class="main-content">
+    <main class="main-content" :class="{ 'has-titlebar': isElectron }">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -45,6 +75,31 @@
     </main>
   </div>
 </template>
+
+<script>
+import { ref, onMounted } from 'vue';
+
+export default {
+  name: 'App',
+  setup() {
+    const isElectron = ref(!!window.electronAPI);
+    const isMaxed = ref(false);
+
+    const minimize = () => window.electronAPI?.minimize();
+    const toggleMax = () => window.electronAPI?.maximize();
+    const closeWin = () => window.electronAPI?.close();
+
+    onMounted(async () => {
+      if (window.electronAPI) {
+        window.electronAPI.onMaximizeChange((v) => { isMaxed.value = v; });
+        isMaxed.value = await window.electronAPI.isMaximized();
+      }
+    });
+
+    return { isElectron, isMaxed, minimize, toggleMax, closeWin };
+  },
+};
+</script>
 
 <style>
 /* ===== CSS Variables ===== */
@@ -213,6 +268,29 @@ select.input { background: var(--color-surface); }
   opacity: 0;
 }
 
+/* ===== 自定义滚动条 ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Firefox 滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
 /* ===== Loading / Empty States ===== */
 .loading, .empty {
   text-align: center;
@@ -241,6 +319,60 @@ select.input { background: var(--color-surface); }
   min-height: 100vh;
 }
 
+/* ===== Titlebar (Electron) ===== */
+.titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  background: var(--color-sidebar-bg);
+  z-index: 200;
+  user-select: none;
+  flex-shrink: 0;
+}
+.titlebar-drag {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 14px;
+  -webkit-app-region: drag;
+  color: var(--color-sidebar-text);
+  font-size: 0.8rem;
+}
+.titlebar-title {
+  color: var(--color-sidebar-text);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+.titlebar-controls {
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+.tb-btn {
+  width: 46px;
+  border: none;
+  background: transparent;
+  color: var(--color-sidebar-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.tb-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.tb-btn-close:hover {
+  background: #e81123;
+  color: #fff;
+}
+
 /* ===== Sidebar ===== */
 .sidebar {
   width: 220px;
@@ -252,6 +384,9 @@ select.input { background: var(--color-surface); }
   left: 0;
   bottom: 0;
   z-index: 100;
+}
+.sidebar.has-titlebar {
+  top: 36px;
 }
 .sidebar-header {
   padding: 1.5rem 1.25rem;
@@ -319,5 +454,8 @@ select.input { background: var(--color-surface); }
   margin-left: 220px;
   padding: 2rem;
   min-height: 100vh;
+}
+.main-content.has-titlebar {
+  margin-top: 36px;
 }
 </style>
