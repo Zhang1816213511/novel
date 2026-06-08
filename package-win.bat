@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 > nul
-title NovelWriter 桌面客户端打包
+title NovelWriter 桌面客户端打包 (Electron)
 
 echo ============================================
 echo  NovelWriter 桌面客户端打包 (Electron)
@@ -23,8 +23,10 @@ set "STAGE_DIR=%PROJECT_DIR%\build-staging"
 set "ELECTRON_DIR=%PROJECT_DIR%\electron-dist"
 
 :: 检查必要工具
-where node >nul 2>nul || ( echo [错误] 未找到 node.exe & pause & exit /b 1 )
-where npm >nul 2>nul || ( echo [错误] 未找到 npm & pause & exit /b 1 )
+where node >nul 2>nul
+if %errorlevel% neq 0 ( echo [错误] 未找到 node.exe & pause & exit /b 1 )
+where npm >nul 2>nul
+if %errorlevel% neq 0 ( echo [错误] 未找到 npm & pause & exit /b 1 )
 
 echo.
 echo [1/4] 构建 Vue 前端...
@@ -32,13 +34,13 @@ cd /d "%WEB_DIR%"
 if not exist "node_modules" call npm install
 call npm run build
 if %errorlevel% neq 0 ( echo [错误] 前端打包失败! & pause & exit /b 1 )
-echo   OK - 前端已输出到 src/main/resources/static/
+echo   OK - 前端已输出到 java/src/main/resources/static/
 echo.
 
 echo [2/4] 构建 Spring Boot 后端...
 cd /d "%PROJECT_DIR%"
 set "JAVA_HOME=%JPKG_JAVA_HOME%"
-call mvn clean package -DskipTests -Dmaven.test.skip=true
+call mvn clean package -DskipTests -Dmaven.test.skip=true -s "D:\app\apache-maven-3.9.9\conf\alyun.xml"
 if %errorlevel% neq 0 ( echo [错误] 后端打包失败! & pause & exit /b 1 )
 echo   OK - JAR: %TARGET_DIR%\%MAIN_JAR%
 echo.
@@ -56,6 +58,10 @@ echo.
 
 echo [4/4] 构建 Electron 桌面客户端...
 cd /d "%PROJECT_DIR%"
+
+:: 设置镜像（国内加速）
+set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+set ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
 
 :: 检查 electron 依赖
 if not exist "node_modules" call npm install

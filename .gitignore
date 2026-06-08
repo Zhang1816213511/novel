@@ -69,3 +69,5 @@ electron-dist/
 *.exe
 node_modules/
 
+/java/src/main/resources/static/
+/web/node/

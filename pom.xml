@@ -105,9 +105,11 @@
     </dependencies>
 
     <build>
+        <sourceDirectory>java/src/main/java</sourceDirectory>
+        <testSourceDirectory>java/src/test/java</testSourceDirectory>
         <resources>
             <resource>
-                <directory>src/main/resources</directory>
+                <directory>java/src/main/resources</directory>
                 <includes>
                     <include>**/*</include>
                 </includes>
