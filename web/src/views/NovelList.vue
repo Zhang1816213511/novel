@@ -2,7 +2,7 @@
   <div class="novel-list">
     <header class="page-header">
       <h2>我的作品</h2>
-      <button @click="showCreateModal = true" class="btn btn-primary">
+      <button @click="tryCreate" class="btn btn-primary">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="5" x2="12" y2="19"/>
           <line x1="5" y1="12" x2="19" y2="12"/>
@@ -10,6 +10,16 @@
         新建作品
       </button>
     </header>
+
+    <!-- 未配置工作目录提示 -->
+    <div v-if="!configStore.configured" class="config-warning">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>工作区根目录未配置，请先前往 <router-link to="/settings" class="link">系统设置</router-link> 配置工作目录</span>
+    </div>
 
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="novels.length === 0" class="empty">
@@ -30,10 +40,9 @@
           <h3>{{ novel.title || '未命名作品' }}</h3>
           <span class="date">{{ formatDate(novel.update_time) }}</span>
         </div>
-        <p class="summary">{{ truncate(novel.content, 120) || '暂无内容' }}</p>
+        <p class="summary">{{ novel.synopsis ? truncate(novel.synopsis, 120) : '暂无内容' }}</p>
         <div class="card-footer">
-          <span class="word-count">{{ (novel.content || '').length }} 字</span>
-          <span class="read-more">阅读更多 &rarr;</span>
+          <span class="read-more">点击编辑 &rarr;</span>
         </div>
       </article>
     </div>
@@ -44,11 +53,15 @@
         <h3>新建作品</h3>
         <div class="form-group">
           <label>作品标题</label>
-          <input v-model="newNovel.title" placeholder="输入作品标题" class="input" />
+          <input v-model="newNovel.title" placeholder="输入作品标题" class="input"
+            @input="updatePreviewPath" />
         </div>
         <div class="form-group">
-          <label>初始内容</label>
-          <textarea v-model="newNovel.content" placeholder="开始写作..." class="textarea" rows="6"></textarea>
+          <label>保存位置</label>
+          <div class="preview-path">
+            <code>{{ previewPath || (configStore.workspaceRoot ? configStore.workspaceRoot + '/{作品标题}/' : '请先配置工作目录') }}</code>
+          </div>
+          <span class="form-hint">作品数据将自动保存到此目录下的 md 文件中</span>
         </div>
         <div class="modal-actions">
           <button @click="showCreateModal = false" class="btn">取消</button>
@@ -60,15 +73,45 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import { useConfigStore } from '../stores/configStore'
+
+const configStore = useConfigStore()
 
 const novels = ref([])
 const loading = ref(false)
 const showCreateModal = ref(false)
-const newNovel = ref({ title: '', content: '' })
+const newNovel = ref({ title: '' })
 
-onMounted(loadNovels)
+const previewPath = computed(() => {
+  if (!newNovel.value.title.trim()) return ''
+  const root = configStore.workspaceRoot
+  if (!root) return ''
+  const dirName = newNovel.value.title
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .trim() || 'untitled'
+  return root + '/' + dirName + '/'
+})
+
+onMounted(async () => {
+  await configStore.checkStatus()
+  await loadNovels()
+})
+
+function updatePreviewPath() {
+  // computed 已自动响应
+}
+
+function tryCreate() {
+  if (!configStore.configured) {
+    alert('请先在系统设置中配置工作区根目录')
+    return
+  }
+  showCreateModal.value = true
+}
 
 async function loadNovels() {
   loading.value = true
@@ -85,12 +128,14 @@ async function loadNovels() {
 async function createNovel() {
   if (!newNovel.value.title.trim()) return alert('请输入标题')
   try {
-    await axios.post('/api/novels', newNovel.value)
+    await axios.post('/api/novels', {
+      title: newNovel.value.title
+    })
     showCreateModal.value = false
-    newNovel.value = { title: '', content: '' }
+    newNovel.value = { title: '' }
     loadNovels()
   } catch (e) {
-    console.error('创建失败', e)
+    alert('创建失败：' + (e.response?.data?.message || e.message))
   }
 }
 
@@ -179,6 +224,46 @@ function formatDate(dateStr) {
   font-size: 0.85rem;
   color: var(--color-primary);
   font-weight: 500;
+}
+
+/* ===== Config Warning ===== */
+.config-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1rem;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: var(--radius-md);
+  color: #f57f17;
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
+.config-warning .link {
+  color: var(--color-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+.config-warning .link:hover {
+  text-decoration: underline;
+}
+
+/* ===== Preview Path ===== */
+.preview-path {
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+.preview-path code {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  word-break: break-all;
+}
+.form-hint {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-top: 4px;
 }
 
 /* ===== Empty State ===== */

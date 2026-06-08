@@ -138,6 +138,25 @@
         </div>
       </div>
     </div>
+
+    <!-- AI 对话浮动按钮 -->
+    <button class="chat-fab" :class="{ active: showChat }" @click="showChat = !showChat" title="AI 对话">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+    </button>
+
+    <!-- AI 对话面板 -->
+    <ChatPanel
+      :visible="showChat"
+      :novelId="Number(route.params.id)"
+      :chapters="chapters"
+      :modelName="selectedModel"
+      @close="showChat = false"
+      @apply-synopsis="onApplySynopsis"
+      @apply-outline="onApplyOutline"
+      @apply-chapter="onApplyChapter"
+    />
   </div>
 </template>
 
@@ -145,10 +164,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import ChatPanel from '../components/ChatPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
-const novel = ref({ title: '', content: '', synopsis: '', outline: '' })
+const novel = ref({ title: '', synopsis: '', outline: '' })
 const chapters = ref([])
 const models = ref([])
 const selectedModel = ref('')
@@ -156,6 +176,7 @@ const savedAt = ref('')
 const genLoading = ref({})
 const wordCount = ref(0)
 const selectedChapterIndex = ref(-1)
+const showChat = ref(false)
 
 const openSections = ref({ synopsis: false, outline: false })
 
@@ -244,7 +265,6 @@ async function saveNow() {
   try {
     await axios.put(`/api/novels/${route.params.id}`, {
       title: novel.value.title,
-      content: novel.value.content,
       synopsis: novel.value.synopsis,
       outline: novel.value.outline
     })
@@ -389,6 +409,30 @@ async function generateContent(chapter) {
     genLoading.value[key] = false
   }
 }
+
+// ========== AI 对话 ==========
+
+function onApplySynopsis(content) {
+  novel.value.synopsis = content
+  scheduleSave()
+}
+
+function onApplyOutline(content) {
+  novel.value.outline = content
+  scheduleSave()
+}
+
+function onApplyChapter(chapterNumber, section, content) {
+  const ch = chapters.value.find(c => c.chapterNumber === chapterNumber)
+  if (!ch) return
+  if (section === 'summary') {
+    ch.summary = content
+  } else if (section === 'content') {
+    ch.content = content
+  }
+  scheduleChapterSave(ch)
+  updateWordCount()
+}
 </script>
 
 <style scoped>
@@ -439,6 +483,17 @@ async function generateContent(chapter) {
 .stat.saved { color: var(--color-success); }
 .stat.unsaved { color: var(--color-warning); }
 .btn-back { flex-shrink: 0; }
+
+.btn-chat {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: transparent;
+}
+.btn-chat:hover,
+.btn-chat.active {
+  background: var(--color-primary);
+  color: white;
+}
 
 /* ===== Body Layout (sidebar + main) ===== */
 .body-layout {
@@ -691,6 +746,37 @@ async function generateContent(chapter) {
 .btn-xs {
   padding: 0.25rem 0.6rem;
   font-size: 0.78rem;
+}
+
+/* ===== Floating Chat Button ===== */
+.chat-fab {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-primary);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(66, 185, 131, 0.4);
+  transition: var(--transition);
+  z-index: 400;
+}
+.chat-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(66, 185, 131, 0.5);
+}
+.chat-fab.active {
+  background: var(--color-text-muted);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+.chat-fab.active:hover {
+  background: var(--color-text-secondary);
 }
 
 /* ===== Spinner ===== */

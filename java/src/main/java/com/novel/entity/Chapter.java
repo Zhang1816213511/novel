@@ -1,5 +1,6 @@
 package com.novel.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -15,7 +16,11 @@ public class Chapter {
     private Long novelId;
     private Integer chapterNumber;
     private String title;
+    /** 此章节的 md 文件目录（workspace 下的相对路径或绝对路径） */
+    private String mdDir;
+    @TableField(exist = false)
     private String summary;
+    @TableField(exist = false)
     private String content;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

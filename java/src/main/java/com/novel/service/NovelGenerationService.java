@@ -4,7 +4,6 @@ import com.novel.entity.Chapter;
 import com.novel.entity.Novel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -17,17 +16,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NovelGenerationService {
 
-    @Autowired
     private final AgentPipelineService agentPipelineService;
-
-    @Autowired
-    private NovelService novelService;
-
-    @Autowired
-    private ChapterService chapterService;
-
-    @Autowired
-    private PromptLoader promptLoader;
+    private final NovelService novelService;
+    private final ChapterService chapterService;
+    private final MarkdownStorageService markdownStorage;
+    private final PromptLoader promptLoader;
 
     /**
      * 根据作品标题生成简介
@@ -100,8 +93,10 @@ public class NovelGenerationService {
                 promptLoader.get("reviewer-system"),
                 userPrompt);
 
-        chapter.setSummary(summary);
-        chapterService.updateById(chapter);
+        // 写入 md 文件
+        if (novel.getWorkspaceDir() != null && chapter.getMdDir() != null) {
+            markdownStorage.writeChapterSummary(novel.getWorkspaceDir(), chapter.getMdDir(), summary);
+        }
         log.info("Summary generated for chapter {} of novel {}", chapter.getChapterNumber(), novelId);
         return summary;
     }
@@ -141,8 +136,10 @@ public class NovelGenerationService {
                 promptLoader.get("reviewer-system"),
                 userPrompt);
 
-        chapter.setContent(content);
-        chapterService.updateById(chapter);
+        // 写入 md 文件
+        if (novel.getWorkspaceDir() != null && chapter.getMdDir() != null) {
+            markdownStorage.writeChapterContent(novel.getWorkspaceDir(), chapter.getMdDir(), content);
+        }
         log.info("Content generated for chapter {} of novel {}", chapter.getChapterNumber(), novelId);
         return content;
     }

@@ -1,5 +1,16 @@
 <template>
   <div class="home">
+    <!-- 未配置工作目录提示 -->
+    <div v-if="showConfigWarning" class="config-banner">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>请先设置工作区根目录，然后开始创作</span>
+      <router-link to="/settings" class="btn btn-sm config-btn">前往设置</router-link>
+    </div>
+
     <section class="hero">
       <div class="hero-content">
         <div class="hero-icon">
@@ -75,10 +86,45 @@
   </div>
 </template>
 
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useConfigStore } from '../stores/configStore'
+
+const configStore = useConfigStore()
+const showConfigWarning = ref(false)
+
+onMounted(async () => {
+  await configStore.checkStatus()
+  showConfigWarning.value = !configStore.configured
+})
+</script>
+
 <style scoped>
 .home {
   max-width: 900px;
   margin: 0 auto;
+}
+
+/* ===== Config Banner ===== */
+.config-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.75rem 1.25rem;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: var(--radius-md);
+  color: #f57f17;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.config-btn {
+  margin-left: auto;
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  text-decoration: none;
 }
 
 /* ===== Hero Section ===== */

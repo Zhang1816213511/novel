@@ -31,17 +31,16 @@ public class ChapterController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "更新章节")
+    @Operation(summary = "更新章节（标题/梗概/正文）")
     public Result<Chapter> update(@PathVariable Long id, @RequestBody Chapter chapter) {
-        chapter.setId(id);
-        chapterService.updateById(chapter);
+        chapterService.updateChapter(id, chapter);
         return Result.success(chapterService.getById(id));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "删除章节")
+    @Operation(summary = "删除章节（同时删除 md 文件）")
     public Result<Void> delete(@PathVariable Long id) {
-        chapterService.removeById(id);
+        chapterService.deleteChapter(id);
         return Result.success();
     }
 }

@@ -63,6 +63,13 @@
         </router-link>
       </nav>
       <div class="sidebar-footer">
+        <router-link to="/settings" class="nav-item settings-link" active-class="active">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+          <span>系统设置</span>
+        </router-link>
         <span class="version">v1.0.0</span>
       </div>
     </aside>
@@ -439,13 +446,39 @@ select.input { background: var(--color-surface); }
 
 /* ===== Footer ===== */
 .sidebar-footer {
-  padding: 1rem 1.25rem;
+  padding: 0.5rem 0.75rem;
   border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar-footer .nav-item {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-sidebar-text);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: var(--transition);
+}
+.sidebar-footer .nav-item:hover {
+  background: var(--color-sidebar-hover);
+  color: var(--color-sidebar-text-active);
+}
+.sidebar-footer .nav-item.active {
+  background: rgba(66, 185, 131, 0.15);
+  color: var(--color-primary);
+}
+.sidebar-footer .nav-item.active svg {
+  stroke: var(--color-primary);
 }
 .version {
   font-size: 0.75rem;
   color: var(--color-sidebar-text);
   opacity: 0.5;
+  padding: 0.25rem 0.75rem;
 }
 
 /* ===== Main Content ===== */

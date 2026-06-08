@@ -25,9 +25,13 @@ function getBackendPaths() {
   };
 }
 
-// 数据目录：用户 AppData 下
+// 数据目录：生产模式时保存到 exe 安装目录，开发模式时保存到项目 data 目录
 function getDataDir() {
-  return path.join(app.getPath('userData'), 'data');
+  if (isDev) {
+    return path.join(__dirname, '..', 'data');
+  }
+  // 打包后：保存到 exe 所在目录（即用户的安装目录）
+  return path.join(path.dirname(app.getPath('exe')), 'data');
 }
 
 // ─── 等待后端就绪 ────────────────────────────────────────
@@ -160,6 +164,13 @@ ipcMain.on('window-maximize', () => {
 });
 ipcMain.on('window-close', () => mainWindow?.close());
 ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized());
+ipcMain.handle('select-directory', async (_event, options) => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory', 'createDirectory'],
+    title: options?.title || '选择目录',
+  });
+  return result.canceled ? null : result.filePaths[0];
+});
 
 // ─── App 生命周期 ────────────────────────────────────────
 app.whenReady().then(async () => {

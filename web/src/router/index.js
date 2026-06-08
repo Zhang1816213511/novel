@@ -20,6 +20,11 @@ const routes = [
     path: '/models',
     name: 'ModelList',
     component: () => import('../views/ModelList.vue')
+  },
+  {
+    path: '/settings',
+    name: 'SystemConfig',
+    component: () => import('../views/SystemConfig.vue')
   }
 ]
 

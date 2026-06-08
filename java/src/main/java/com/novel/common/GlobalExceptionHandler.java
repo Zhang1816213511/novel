@@ -40,6 +40,17 @@ public class GlobalExceptionHandler {
         return Result.failed(ResultCode.BAD_REQUEST, e.getMessage());
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public Result<Void> handleIllegalState(IllegalStateException e) {
+        return Result.failed(ResultCode.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public Result<Void> handleSecurity(SecurityException e) {
+        log.warn("安全拒绝: {}", e.getMessage());
+        return Result.failed(ResultCode.FORBIDDEN, e.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public Result<Void> handleException(Exception e) {
         log.error("服务器异常", e);

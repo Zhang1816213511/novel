@@ -15,4 +15,7 @@ public interface ChapterMapper extends BaseMapper<Chapter> {
 
     @Select("SELECT COALESCE(MAX(chapter_number), 0) FROM chapter WHERE novel_id = #{novelId}")
     Integer getMaxChapterNumber(Long novelId);
+
+    @Select("SELECT * FROM chapter WHERE novel_id = #{novelId} AND chapter_number = #{chapterNumber}")
+    Chapter getByNovelIdAndNumber(Long novelId, int chapterNumber);
 }

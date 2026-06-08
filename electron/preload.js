@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMaximizeChange: (callback) => {
     ipcRenderer.on('window-maximize-change', (_event, value) => callback(value));
   },
+  selectDirectory: (options) => ipcRenderer.invoke('select-directory', options),
 });
