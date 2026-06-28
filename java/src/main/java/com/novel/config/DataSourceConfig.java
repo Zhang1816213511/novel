@@ -63,6 +63,7 @@ public class DataSourceConfig {
             // ─── 兼容旧表：尝试加列，已存在则忽略 ───
             try { stmt.executeUpdate("ALTER TABLE novel_entity ADD COLUMN workspace_dir TEXT"); } catch (Exception ignored) {}
             try { stmt.executeUpdate("ALTER TABLE chapter ADD COLUMN md_dir TEXT"); } catch (Exception ignored) {}
+            try { stmt.executeUpdate("ALTER TABLE model_config ADD COLUMN enabled INTEGER DEFAULT 1"); } catch (Exception ignored) {}
         } catch (Exception e) {
             throw new RuntimeException("Database initialization failed", e);
         }

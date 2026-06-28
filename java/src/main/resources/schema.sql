@@ -46,3 +46,19 @@ CREATE TABLE IF NOT EXISTS system_config (
     create_time     DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
     update_time     DATETIME DEFAULT CURRENT_TIMESTAMP   -- 更新时间
 );
+
+-- ─── 角色表 ───────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS novel_character (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 角色 ID（自增主键）
+    novel_id        INTEGER NOT NULL,                    -- 所属作品 ID
+    name            TEXT NOT NULL,                       -- 角色名称
+    alias           TEXT,                                -- 别名 / 其他称呼
+    description     TEXT,                                -- 角色描述
+    personality     TEXT,                                -- 性格特征
+    appearance      TEXT,                                -- 外貌描述
+    background      TEXT,                                -- 背景故事
+    image_path      TEXT,                                -- 角色图片路径
+    sort_order      INTEGER DEFAULT 0,                   -- 排序
+    create_time     DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
+    update_time     DATETIME DEFAULT CURRENT_TIMESTAMP   -- 更新时间
+);

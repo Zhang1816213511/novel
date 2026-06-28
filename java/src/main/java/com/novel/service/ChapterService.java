@@ -65,7 +65,8 @@ public class ChapterService extends ServiceImpl<ChapterMapper, Chapter> {
             chapter.setMdDir(mdDir);
         }
 
-        save(chapter);
+        chapterMapper.insert(chapter);
+        chapter.setId(chapterMapper.getLastInsertId());
         return chapter;
     }
 

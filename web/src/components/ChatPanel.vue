@@ -31,6 +31,30 @@
             输入 <code>@</code> 引用文件后提出修改要求<br/>
             例如：<span class="example">@简介 改成更简洁的风格</span>
           </p>
+
+          <!-- Quick Templates -->
+          <div class="templates">
+            <p class="templates-title">快速模板</p>
+            <div class="template-grid">
+              <button class="template-btn" @click="useTemplate('synopsis')">
+                <span class="template-icon">📝</span>
+                <span class="template-text">生成简介</span>
+              </button>
+              <button class="template-btn" @click="useTemplate('outline')">
+                <span class="template-icon">📋</span>
+                <span class="template-text">生成大纲</span>
+              </button>
+              <button v-if="firstChapterNumber" class="template-btn" @click="useTemplate('chapter-summary')">
+                <span class="template-icon">📄</span>
+                <span class="template-text">生成梗概</span>
+              </button>
+              <button v-if="firstChapterNumber" class="template-btn" @click="useTemplate('chapter-content')">
+                <span class="template-icon">📃</span>
+                <span class="template-text">生成正文</span>
+              </button>
+            </div>
+          </div>
+
           <div class="welcome-tips">
             <div class="tip"><code>@简介</code> 作品简介</div>
             <div class="tip"><code>@大纲</code> 创作大纲</div>
@@ -137,6 +161,11 @@ export default {
     const showAutocomplete = ref(false)
     const activeRefs = ref([])
     const autoRef = ref(null)
+
+    const firstChapterNumber = computed(() => {
+      if (props.chapters.length === 0) return null
+      return props.chapters[0].chapterNumber || 1
+    })
 
     // ─── Autocomplete items ───
     const autocompleteItems = computed(() => {
@@ -353,6 +382,21 @@ export default {
       activeRefs.value.splice(index, 1)
     }
 
+    // ─── Quick Templates ───
+    function useTemplate(type) {
+      const templates = {
+        'synopsis': '请根据作品标题和已有内容，生成一份完整的作品简介。@简介',
+        'outline': '请根据作品简介，生成一份详细的创作大纲。@大纲 @简介',
+        'chapter-summary': `请生成第${firstChapterNumber.value}章的梗概，概括本章的核心情节。@${firstChapterNumber.value}/content`,
+        'chapter-content': `请生成第${firstChapterNumber.value}章的正文内容，按照梗概展开。@${firstChapterNumber.value}/summary`,
+      }
+      inputText.value = templates[type] || ''
+      nextTick(() => {
+        inputRef.value?.focus()
+        inputRef.value?.setSelectionRange(inputText.value.length, inputText.value.length)
+      })
+    }
+
     function renderMarkdown(text) {
       if (!text) return ''
       // 简单的 markdown 渲染（支持代码块、加粗、换行）
@@ -389,10 +433,11 @@ export default {
     return {
       inputText, messages, loading, messagesRef, inputRef, composing,
       showAutocomplete, autoIndex, autoRef, activeRefs,
-      filteredAutocomplete, canSend,
+      firstChapterNumber, filteredAutocomplete, canSend,
       onInputChange, onInputKeydown, selectAuto,
       sendMessage, applyChange,
       formatRefLabel, formatChangeLabel, removeRef, renderMarkdown,
+      useTemplate,
     }
   },
 }
@@ -520,6 +565,50 @@ export default {
 .tip code {
   color: var(--color-primary);
   font-weight: 500;
+}
+
+/* Quick Templates */
+.templates {
+  margin: 1rem 0;
+}
+.templates-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+.template-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.template-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  cursor: pointer;
+  transition: all 0.12s;
+  text-align: left;
+}
+.template-btn:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+.template-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.template-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+.template-btn:hover .template-text {
+  color: var(--color-primary);
 }
 
 /* Message bubbles */

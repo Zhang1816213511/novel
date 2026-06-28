@@ -54,6 +54,15 @@
           </svg>
           <span>我的作品</span>
         </router-link>
+        <router-link :to="charLink" class="nav-item" :class="{ active: charActive }">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+            <path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+          <span>角色管理</span>
+        </router-link>
         <router-link to="/models" class="nav-item" active-class="active">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
@@ -84,13 +93,26 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { novelStore } from './stores/novelStore.js';
 
 export default {
   name: 'App',
   setup() {
+    const route = useRoute();
     const isElectron = ref(!!window.electronAPI);
     const isMaxed = ref(false);
+
+    const charLink = computed(() => {
+      return novelStore.currentNovelId
+        ? `/novel/${novelStore.currentNovelId}/characters`
+        : '/novel';
+    });
+
+    const charActive = computed(() => {
+      return route.path.endsWith('/characters');
+    });
 
     const minimize = () => window.electronAPI?.minimize();
     const toggleMax = () => window.electronAPI?.maximize();
@@ -103,7 +125,7 @@ export default {
       }
     });
 
-    return { isElectron, isMaxed, minimize, toggleMax, closeWin };
+    return { isElectron, isMaxed, charLink, charActive, minimize, toggleMax, closeWin };
   },
 };
 </script>

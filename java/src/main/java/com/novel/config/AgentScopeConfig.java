@@ -34,7 +34,8 @@ public class AgentScopeConfig {
                 props.put("provider", mc.getProvider());
                 props.put("modelName", mc.getModelName());
                 props.put("baseUrl", mc.getBaseUrl() != null ? mc.getBaseUrl() :
-                    "ollama".equals(mc.getProvider()) ? "http://localhost:11434" : null);
+                    "ollama".equals(mc.getProvider()) ? "http://localhost:11434" :
+                    "deepseek".equals(mc.getProvider()) ? "https://api.deepseek.com" : null);
                 props.put("apiKey", mc.getApiKey());
                 if (mc.getOptions() != null) {
                     props.put("options", mc.getOptions());
@@ -73,6 +74,14 @@ public class AgentScopeConfig {
         if ("ollama".equals(provider)) {
             return OllamaChatModel.builder()
                     .baseUrl(baseUrl)
+                    .modelName(modelName)
+                    .build();
+        }
+
+        if ("deepseek".equals(provider)) {
+            return OpenAIChatModel.builder()
+                    .baseUrl(baseUrl != null ? baseUrl : "https://api.deepseek.com")
+                    .apiKey(apiKey)
                     .modelName(modelName)
                     .build();
         }

@@ -18,4 +18,7 @@ public interface ChapterMapper extends BaseMapper<Chapter> {
 
     @Select("SELECT * FROM chapter WHERE novel_id = #{novelId} AND chapter_number = #{chapterNumber}")
     Chapter getByNovelIdAndNumber(Long novelId, int chapterNumber);
+
+    @Select("SELECT last_insert_rowid()")
+    Long getLastInsertId();
 }

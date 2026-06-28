@@ -23,121 +23,95 @@
       </div>
     </header>
 
+    <!-- Navigation Bar: 简介大纲 / 章节编辑 / 角色管理 -->
+    <nav class="detail-nav">
+      <button :class="['nav-btn', { active: activeTab === 'synopsis-outline' }]" @click="switchTab('synopsis-outline')">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        简介大纲
+      </button>
+      <button :class="['nav-btn', { active: activeTab === 'chapters' }]" @click="switchTab('chapters')">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        章节编辑
+      </button>
+      <button :class="['nav-btn', { active: activeTab === 'characters' }]" @click="switchTab('characters')">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        角色管理
+      </button>
+    </nav>
+
+    <!-- Tab Content -->
     <div class="body-layout">
-      <!-- Left: Chapter Sidebar -->
-      <aside class="chapter-sidebar">
-        <div class="sidebar-header">
-          <h3>章节</h3>
-          <button class="btn btn-sm" @click="addChapter">+ 添加</button>
-        </div>
-        <div class="chapter-nav-list">
-          <div v-for="(ch, idx) in chapters" :key="ch.id"
-            :class="['chapter-nav-item', { active: idx === selectedChapterIndex }]"
-            @click="selectedChapterIndex = idx">
-            <span class="chapter-nav-num">{{ idx + 1 }}</span>
-            <span class="chapter-nav-title">{{ ch.title || `第${idx + 1}章` }}</span>
-            <button class="chapter-nav-delete" @click.stop="deleteChapter(ch.id, idx)" title="删除章节">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
+      <!-- 简介大纲 Tab (merged) -->
+      <div v-if="activeTab === 'synopsis-outline'" class="tab-content synopsis-outline">
+        <section class="so-section">
+          <div class="so-section-header">
+            <span class="so-section-title">作品简介</span>
+            <span v-if="novel.synopsis" class="section-badge">已生成</span>
           </div>
-          <div v-if="chapters.length === 0" class="chapter-nav-empty">
-            暂无章节，点击「+ 添加」创建
+          <RichEditor v-model="novel.synopsis" placeholder="在此编写作品简介..."
+            @update:model-value="scheduleSave" />
+        </section>
+        <section class="so-section">
+          <div class="so-section-header">
+            <span class="so-section-title">创作大纲</span>
+            <span v-if="novel.outline" class="section-badge">已生成</span>
           </div>
-        </div>
-      </aside>
-
-      <!-- Right: Main Content -->
-      <div class="main-content">
-        <!-- Synopsis & Outline (collapsible) -->
-        <div class="meta-sections">
-          <section class="section-card">
-            <div class="section-header" @click="toggleSection('synopsis')">
-              <h3>
-                <span class="section-arrow">{{ openSections.synopsis ? '▼' : '▶' }}</span>
-                作品简介
-                <span v-if="novel.synopsis" class="section-badge">已生成</span>
-              </h3>
-              <button v-if="openSections.synopsis" class="btn btn-sm btn-primary"
-                :disabled="genLoading.synopsis || !selectedModel"
-                @click.stop="generateSynopsis">
-                <span v-if="genLoading.synopsis" class="spinner"></span>
-                {{ novel.synopsis ? '重新生成' : '生成简介' }}
-              </button>
-            </div>
-            <div v-show="openSections.synopsis" class="section-body">
-              <textarea v-model="novel.synopsis" class="section-textarea"
-                placeholder="作品简介将在生成后显示，也可手动编辑..."
-                @input="scheduleSave"></textarea>
-            </div>
-          </section>
-
-          <section class="section-card">
-            <div class="section-header" @click="toggleSection('outline')">
-              <h3>
-                <span class="section-arrow">{{ openSections.outline ? '▼' : '▶' }}</span>
-                创作大纲
-                <span v-if="novel.outline" class="section-badge">已生成</span>
-              </h3>
-              <button v-if="openSections.outline" class="btn btn-sm btn-primary"
-                :disabled="genLoading.outline || !selectedModel || !novel.synopsis"
-                @click.stop="generateOutline">
-                <span v-if="genLoading.outline" class="spinner"></span>
-                {{ novel.outline ? '重新生成' : '生成大纲' }}
-              </button>
-            </div>
-            <div v-show="openSections.outline" class="section-body">
-              <textarea v-model="novel.outline" class="section-textarea"
-                placeholder="大纲将在生成简介后生成，也可手动编辑..."
-                @input="scheduleSave"></textarea>
-            </div>
-          </section>
-        </div>
-
-        <!-- Chapter Editor -->
-        <div v-if="selectedChapter" class="chapter-editor">
-          <div class="chapter-editor-header">
-            <input v-model="selectedChapter.title" class="chapter-title-input"
-              placeholder="章节标题" @input="scheduleChapterSave(selectedChapter)" />
-          </div>
-          <div class="chapter-editor-body">
-            <div class="chapter-field">
-              <div class="chapter-field-header">
-                <label>梗概</label>
-                <button class="btn btn-xs btn-primary"
-                  :disabled="genLoading['summary-' + selectedChapter.id] || !selectedModel"
-                  @click="generateSummary(selectedChapter)">
-                  <span v-if="genLoading['summary-' + selectedChapter.id]" class="spinner"></span>
-                  生成梗概
-                </button>
-              </div>
-              <textarea v-model="selectedChapter.summary" class="chapter-textarea"
-                placeholder="本章梗概，可手动编辑或点击生成"
-                @input="scheduleChapterSave(selectedChapter)"></textarea>
-            </div>
-            <div class="chapter-field">
-              <div class="chapter-field-header">
-                <label>正文</label>
-                <button class="btn btn-xs btn-primary"
-                  :disabled="genLoading['content-' + selectedChapter.id] || !selectedModel || !selectedChapter.summary"
-                  @click="generateContent(selectedChapter)">
-                  <span v-if="genLoading['content-' + selectedChapter.id]" class="spinner"></span>
-                  生成正文
-                </button>
-              </div>
-              <textarea v-model="selectedChapter.content" class="chapter-textarea chapter-content"
-                placeholder="本章正文，可手动编辑或先生成梗概再生成正文"
-                @input="scheduleChapterSave(selectedChapter)"></textarea>
-            </div>
-          </div>
-        </div>
-        <div v-else class="chapter-editor-placeholder">
-          <p>选择左侧章节开始编辑，或点击「+ 添加」创建新章节</p>
-        </div>
+          <RichEditor v-model="novel.outline" placeholder="在此编写创作大纲..."
+            @update:model-value="scheduleSave" />
+        </section>
       </div>
+
+      <!-- Chapters Tab -->
+      <template v-if="activeTab === 'chapters'">
+        <aside class="chapter-sidebar">
+          <div class="sidebar-header">
+            <h3>章节</h3>
+            <button class="btn btn-sm" @click="addChapter">+ 添加</button>
+          </div>
+          <div class="chapter-nav-list">
+            <div v-for="(ch, idx) in chapters" :key="ch.id"
+              :class="['chapter-nav-item', { active: idx === selectedChapterIndex }]"
+              @click="selectedChapterIndex = idx">
+              <span class="chapter-nav-num">{{ idx + 1 }}</span>
+              <span class="chapter-nav-title">{{ ch.title || `第${idx + 1}章` }}</span>
+              <button class="chapter-nav-delete" @click.stop="deleteChapter(ch.id, idx)" title="删除章节">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div v-if="chapters.length === 0" class="chapter-nav-empty">
+              暂无章节，点击「+ 添加」创建
+            </div>
+          </div>
+        </aside>
+
+        <div class="main-content">
+          <div v-if="selectedChapter" class="chapter-editor">
+            <div class="chapter-editor-header">
+              <input v-model="selectedChapter.title" class="chapter-title-input"
+                placeholder="章节标题" @input="scheduleChapterSave(selectedChapter)" />
+            </div>
+            <div class="chapter-editor-body">
+              <RichEditor v-model="selectedChapter.content" placeholder="本章正文..."
+                :characters="allCharacters" @character-click="onCharacterClick"
+                @update:model-value="scheduleChapterSave(selectedChapter)" />
+            </div>
+          </div>
+          <div v-else class="chapter-editor-placeholder">
+            <p>选择左侧章节开始编辑，或点击「+ 添加」创建新章节</p>
+          </div>
+        </div>
+      </template>
+
+      <!-- Characters Tab -->
+      <CharacterManager v-if="activeTab === 'characters'" :novelId="Number(route.params.id)"
+        @characters-updated="onCharactersUpdated" />
     </div>
+
+    <!-- Character Info Popup -->
+    <CharacterInfoPopup :character="clickedCharacter" @close="clickedCharacter = null" />
 
     <!-- AI 对话浮动按钮 -->
     <button class="chat-fab" :class="{ active: showChat }" @click="showChat = !showChat" title="AI 对话">
@@ -161,10 +135,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import ChatPanel from '../components/ChatPanel.vue'
+import RichEditor from '../components/RichEditor.vue'
+import CharacterManager from '../components/CharacterManager.vue'
+import CharacterInfoPopup from '../components/CharacterInfoPopup.vue'
+import { novelStore } from '../stores/novelStore.js'
+
+const props = defineProps({
+  tab: { type: String, default: 'synopsis-outline' }
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -173,12 +155,44 @@ const chapters = ref([])
 const models = ref([])
 const selectedModel = ref('')
 const savedAt = ref('')
-const genLoading = ref({})
 const wordCount = ref(0)
 const selectedChapterIndex = ref(-1)
 const showChat = ref(false)
+const activeTab = ref(props.tab || 'synopsis-outline')
+const allCharacters = ref([])
+const clickedCharacter = ref(null)
 
-const openSections = ref({ synopsis: false, outline: false })
+let saveTimer = null
+let chapterTimers = {}
+
+watch(() => props.tab, (t) => {
+  if (t) activeTab.value = t
+})
+
+watch(activeTab, (t) => {
+  const path = t === 'synopsis-outline' ? `/novel/${route.params.id}` : `/novel/${route.params.id}/${t}`
+  router.replace(path)
+})
+
+watch(() => route.params.id, (id) => {
+  if (id && id !== novelStore.currentNovelId) {
+    Promise.all([loadNovel(), loadModels(), loadCharacters()])
+    updateWordCount()
+  }
+})
+
+onMounted(async () => {
+  await Promise.all([loadNovel(), loadModels(), loadCharacters()])
+  updateWordCount()
+})
+
+onUnmounted(() => {
+  if (saveTimer) clearTimeout(saveTimer)
+  Object.values(chapterTimers).forEach(t => clearTimeout(t))
+  saveNow()
+  novelStore.currentNovelId = null
+  novelStore.currentNovelTitle = ''
+})
 
 const selectedChapter = computed(() => {
   if (selectedChapterIndex.value >= 0 && selectedChapterIndex.value < chapters.value.length) {
@@ -187,19 +201,15 @@ const selectedChapter = computed(() => {
   return null
 })
 
-let saveTimer = null
-let chapterTimers = {}
+function switchTab(tab) {
+  activeTab.value = tab
+}
 
-onMounted(async () => {
-  await Promise.all([loadNovel(), loadModels()])
-  updateWordCount()
-})
-
-onUnmounted(() => {
-  if (saveTimer) clearTimeout(saveTimer)
-  Object.values(chapterTimers).forEach(t => clearTimeout(t))
-  saveNow()
-})
+function goBack() {
+  novelStore.currentNovelId = null
+  novelStore.currentNovelTitle = ''
+  router.push('/novel')
+}
 
 async function loadNovel() {
   try {
@@ -208,6 +218,8 @@ async function loadNovel() {
       novel.value = res.data.data
       novel.value.synopsis = novel.value.synopsis || ''
       novel.value.outline = novel.value.outline || ''
+      novelStore.currentNovelId = Number(route.params.id)
+      novelStore.currentNovelTitle = novel.value.title
     }
   } catch (e) {
     console.error('加载作品失败', e)
@@ -245,13 +257,27 @@ async function loadModels() {
   }
 }
 
+async function loadCharacters() {
+  try {
+    const res = await axios.get(`/api/characters/novel/${route.params.id}`)
+    allCharacters.value = res.data.data || []
+  } catch (e) {
+    console.error('加载角色失败', e)
+  }
+}
+
+function onCharacterClick(name) {
+  const ch = allCharacters.value.find(c => c.name === name)
+  if (ch) clickedCharacter.value = ch
+}
+
+function onCharactersUpdated(chars) {
+  allCharacters.value = chars
+}
+
 function updateWordCount() {
   const allContent = chapters.value.map(c => c.content || '').join('')
   wordCount.value = allContent.length
-}
-
-function toggleSection(name) {
-  openSections.value[name] = !openSections.value[name]
 }
 
 // ========== Auto-Save ==========
@@ -295,8 +321,6 @@ function scheduleChapterSave(chapter) {
   }, 800)
 }
 
-function goBack() { router.push('/novel') }
-
 // ========== Chapters ==========
 
 async function addChapter() {
@@ -326,87 +350,6 @@ async function deleteChapter(id, idx) {
     updateWordCount()
   } catch (e) {
     console.error('删除章节失败', e)
-  }
-}
-
-// ========== Generation ==========
-
-async function generateSynopsis() {
-  if (!selectedModel.value) return
-  genLoading.value.synopsis = true
-  try {
-    const res = await axios.post(`/api/generate/${route.params.id}/synopsis`, {
-      modelName: selectedModel.value
-    })
-    if (res.data.code === 200) {
-      novel.value.synopsis = res.data.data
-      await saveNow()
-    }
-  } catch (e) {
-    console.error('生成简介失败', e)
-    alert('生成简介失败：' + (e.response?.data?.message || e.message))
-  } finally {
-    genLoading.value.synopsis = false
-  }
-}
-
-async function generateOutline() {
-  if (!selectedModel.value) return
-  genLoading.value.outline = true
-  try {
-    const res = await axios.post(`/api/generate/${route.params.id}/outline`, {
-      modelName: selectedModel.value
-    })
-    if (res.data.code === 200) {
-      novel.value.outline = res.data.data
-      await saveNow()
-    }
-  } catch (e) {
-    console.error('生成大纲失败', e)
-    alert('生成大纲失败：' + (e.response?.data?.message || e.message))
-  } finally {
-    genLoading.value.outline = false
-  }
-}
-
-async function generateSummary(chapter) {
-  if (!selectedModel.value) return
-  const key = 'summary-' + chapter.id
-  genLoading.value[key] = true
-  try {
-    const res = await axios.post(`/api/generate/${route.params.id}/chapter-summary/${chapter.id}`, {
-      modelName: selectedModel.value
-    })
-    if (res.data.code === 200) {
-      chapter.summary = res.data.data
-      scheduleChapterSave(chapter)
-    }
-  } catch (e) {
-    console.error('生成梗概失败', e)
-    alert('生成梗概失败：' + (e.response?.data?.message || e.message))
-  } finally {
-    genLoading.value[key] = false
-  }
-}
-
-async function generateContent(chapter) {
-  if (!selectedModel.value) return
-  const key = 'content-' + chapter.id
-  genLoading.value[key] = true
-  try {
-    const res = await axios.post(`/api/generate/${route.params.id}/chapter-content/${chapter.id}`, {
-      modelName: selectedModel.value
-    })
-    if (res.data.code === 200) {
-      chapter.content = res.data.data
-      scheduleChapterSave(chapter)
-      updateWordCount()
-    }
-  } catch (e) {
-    console.error('生成正文失败', e)
-    alert('生成正文失败：' + (e.response?.data?.message || e.message))
-  } finally {
-    genLoading.value[key] = false
   }
 }
 
@@ -453,7 +396,7 @@ function onApplyChapter(chapterNumber, section, content) {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   flex-shrink: 0;
 }
 .title-area { flex: 1; min-width: 0; }
@@ -484,15 +427,112 @@ function onApplyChapter(chapterNumber, section, content) {
 .stat.unsaved { color: var(--color-warning); }
 .btn-back { flex-shrink: 0; }
 
-.btn-chat {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-  background: transparent;
+/* ===== Navigation Bar ===== */
+.detail-nav {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
 }
-.btn-chat:hover,
-.btn-chat.active {
-  background: var(--color-primary);
-  color: white;
+.nav-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.7rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  transition: all 0.15s;
+  position: relative;
+}
+.nav-btn:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: var(--color-border);
+}
+.nav-btn:hover {
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+.nav-btn.active {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  font-weight: 600;
+}
+.nav-btn.active svg {
+  stroke: var(--color-primary);
+}
+
+/* ===== Tab Content ===== */
+.tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* ===== 简介大纲 Merged Section ===== */
+.synopsis-outline {
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.so-section {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.so-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.so-section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.so-section .doc-editor-wrapper {
+  border: none;
+  border-radius: 0;
+}
+.so-section .doc-editor-toolbar {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+.tab-toolbar-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.section-badge {
+  font-size: 0.65rem;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+  font-weight: 500;
 }
 
 /* ===== Body Layout (sidebar + main) ===== */
@@ -594,73 +634,6 @@ function onApplyChapter(chapterNumber, section, content) {
   overflow: hidden;
 }
 
-/* ===== Meta Sections (synopsis & outline) ===== */
-.meta-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-.section-card {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.6rem 1rem;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s;
-}
-.section-header:hover { background: var(--color-bg); }
-.section-header h3 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text);
-}
-.section-arrow {
-  font-size: 0.65rem;
-  color: var(--color-text-muted);
-  width: 12px;
-}
-.section-badge {
-  font-size: 0.65rem;
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  padding: 0.1rem 0.45rem;
-  border-radius: 10px;
-  font-weight: 500;
-}
-.section-body {
-  padding: 0 1rem 0.75rem;
-}
-.section-textarea {
-  width: 100%;
-  min-height: 80px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  resize: vertical;
-  font-family: inherit;
-  color: var(--color-text);
-  background: var(--color-bg);
-  transition: var(--transition);
-}
-.section-textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
-}
-
 /* ===== Chapter Editor ===== */
 .chapter-editor {
   flex: 1;
@@ -688,44 +661,21 @@ function onApplyChapter(chapterNumber, section, content) {
 }
 .chapter-editor-body {
   flex: 1;
-  overflow-y: auto;
-  padding: 0.75rem 1rem 1rem;
-}
-.chapter-field {
-  margin-bottom: 0.75rem;
-}
-.chapter-field:last-child { margin-bottom: 0; }
-.chapter-field-header {
+  overflow: hidden;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.35rem;
+  flex-direction: column;
 }
-.chapter-field-header label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+.chapter-editor-body .doc-editor-wrapper {
+  flex: 1;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
 }
-.chapter-textarea {
-  width: 100%;
-  min-height: 80px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  resize: vertical;
-  font-family: inherit;
-  color: var(--color-text);
-  background: var(--color-bg);
-  transition: var(--transition);
+.chapter-editor-body .doc-editor-content {
+  max-height: none;
 }
-.chapter-textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
-}
-.chapter-content {
+.chapter-editor-body .doc-page {
   min-height: 300px;
 }
 
@@ -740,12 +690,6 @@ function onApplyChapter(chapterNumber, section, content) {
   box-shadow: var(--shadow-sm);
   color: var(--color-text-muted);
   font-size: 0.9rem;
-}
-
-/* ===== Buttons ===== */
-.btn-xs {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.78rem;
 }
 
 /* ===== Floating Chat Button ===== */
@@ -775,21 +719,4 @@ function onApplyChapter(chapterNumber, section, content) {
   background: var(--color-text-muted);
   box-shadow: 0 4px 14px rgba(0,0,0,0.15);
 }
-.chat-fab.active:hover {
-  background: var(--color-text-secondary);
-}
-
-/* ===== Spinner ===== */
-.spinner {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid currentColor;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-  margin-right: 2px;
-  vertical-align: middle;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 </style>

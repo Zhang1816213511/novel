@@ -42,7 +42,7 @@
             <td class="cell-name">{{ m.name }}</td>
             <td>
               <span class="provider-badge" :class="m.provider">
-                {{ m.provider === 'ollama' ? 'Ollama' : 'OpenAI' }}
+                {{ m.provider === 'ollama' ? 'Ollama' : m.provider === 'deepseek' ? 'DeepSeek' : 'OpenAI' }}
               </span>
             </td>
             <td><code>{{ m.modelName }}</code></td>
@@ -83,8 +83,9 @@
           </div>
           <div class="form-group">
             <label>提供商</label>
-            <select v-model="form.provider" class="input">
+            <select v-model="form.provider" class="input" @change="onProviderChange">
               <option value="openai">OpenAI（兼容协议）</option>
+              <option value="deepseek">DeepSeek</option>
               <option value="ollama">Ollama（本地）</option>
             </select>
           </div>
@@ -178,6 +179,16 @@ function openCreate() {
   form.value = { name: '', provider: 'openai', modelName: '', baseUrl: '', apiKey: '',
     temperature: null, maxTokens: null, numCtx: null }
   showForm.value = true
+}
+
+function onProviderChange() {
+  if (editingModel.value) return
+  if (form.value.provider === 'deepseek') {
+    form.value.baseUrl = 'https://api.deepseek.com'
+    form.value.modelName = 'deepseek-chat'
+  } else if (form.value.provider === 'ollama') {
+    form.value.baseUrl = 'http://localhost:11434'
+  }
 }
 
 function editModel(m) {
@@ -329,6 +340,10 @@ async function deleteModel(m) {
 .provider-badge.ollama {
   background: #f3e8ff;
   color: #7c3aed;
+}
+.provider-badge.deepseek {
+  background: #e0f2fe;
+  color: #0369a1;
 }
 
 /* ===== Status Dot ===== */

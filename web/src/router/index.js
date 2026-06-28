@@ -12,9 +12,10 @@ const routes = [
     component: () => import('../views/NovelList.vue')
   },
   {
-    path: '/novel/:id',
+    path: '/novel/:id/:tab?',
     name: 'NovelDetail',
-    component: () => import('../views/NovelDetail.vue')
+    component: () => import('../views/NovelDetail.vue'),
+    props: true
   },
   {
     path: '/models',

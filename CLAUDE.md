@@ -2,6 +2,18 @@
 
 此文件为 Claude Code 在仓库中工作提供指导。
 
+## 工作方式
+
+### 优先使用 Skill
+开始任何任务前，先检查是否有匹配的 Skill 可用。Skill 提供标准化的工作流程，避免遗漏步骤。即使只有 1% 的可能性匹配，也应调用 Skill 工具确认。
+
+### 优先使用 CodeGraph
+- 用 `codegraph query <关键词>` 搜索代码中的符号、函数、类
+- 用 `codegraph callers/callees <符号>` 追踪函数调用链
+- 用 `codegraph impact <符号>` 分析变更影响范围
+- 用 `codegraph status` 检查索引状态，确保索引是最新的
+- 代码改动后运行 `codegraph sync` 同步索引
+
 ## 项目目标
 
 **本地写作智能助手** — 基于大语言模型（Ollama / OpenAI 兼容 API）辅助创作小说和文章。核心流程：用户提供主题或已有内容，AI 生成续写/改写/扩写，支持人工编辑修改。
@@ -16,27 +28,53 @@
 | 缓存 | Caffeine（Spring `@Cacheable`，60min TTL） |
 | AI 模型层 | AgentScope（ReActAgent + SequentialPipeline，支持 Ollama 本地 + OpenAI 兼容 API） |
 | API 文档 | Knife4j 4.5（`/doc.html`） |
-| 前端 | Vue 3.4 + Vite 5 + Hash 路由 |
-| 打包方式 | `java -jar` 单文件运行，Vue 构建产物输出到 `src/main/resources/static/` |
+| 前端 | Vue 3.4 + Vite 5 + Pinia + Hash 路由 |
+| 桌面打包 | Electron（`electron/` 目录） |
+| 打包方式 | `java -jar` 单文件运行，Vue 构建产物输出到 `java/src/main/resources/static/` |
 
 ## 项目结构
 
 ```
 novel/
-├── NovelApplication.java          启动类（@EnableCaching）
-├── config/                        数据源、MyBatis-Plus、Web、Knife4j、AgentScope 配置
-├── common/                        Result<T> 统一返回、全局异常处理
-├── controller/                    REST API
-├── service/                       业务逻辑 + AgentScope 双智能体管道 + Caffeine 缓存
-├── mapper/                        MyBatis-Plus Mapper
-├── entity/                        实体（Novel, ModelConfig）
-├── dto/                           请求/响应 DTO
-├── entity/                        实体（Novel, Chapter, ModelConfig）
-└── web/                           Vue 前端
-    ├── src/views/Home.vue         首页
-    ├── src/views/NovelList.vue    作品列表（卡片网格）
-    ├── src/views/NovelDetail.vue  编辑器（分步生成 + 章节管理，自动保存）
-    └── src/views/ModelList.vue    模型配置 CRUD（弹窗表单）
+├── java/                                    Java 后端
+│   └── src/main/
+│       ├── java/com/novel/
+│       │   ├── NovelApplication.java        启动类（@EnableCaching）
+│       │   ├── common/                      Result<T> 统一返回、全局异常处理
+│       │   ├── config/                      数据源、MyBatis-Plus、Web、Knife4j、AgentScope 配置
+│       │   ├── controller/                  REST API（Novel、Chapter、Generation、ModelConfig、Chat、SystemConfig）
+│       │   ├── dto/                         请求/响应 DTO
+│       │   ├── entity/                      实体（Novel、Chapter、ModelConfig、SystemConfig）
+│       │   ├── enums/                       枚举（GenStage）
+│       │   ├── mapper/                      MyBatis-Plus Mapper
+│       │   └── service/                     业务逻辑 + AgentScope 双智能体管道 + 聊天服务
+│       └── resources/
+│           ├── application.yml              配置文件
+│           ├── schema.sql                   建表 DDL
+│           └── prompts/                     提示词 Markdown 模板（writer/reviewer/chat 等）
+├── web/                                     Vue 前端
+│   ├── src/
+│   │   ├── App.vue                          根组件 + 侧边栏导航
+│   │   ├── main.js                          入口
+│   │   ├── router/index.js                  路由配置
+│   │   ├── stores/configStore.js            Pinia 状态管理
+│   │   ├── components/
+│   │   │   └── ChatPanel.vue                聊天面板组件
+│   │   └── views/
+│   │       ├── Home.vue                     首页
+│   │       ├── NovelList.vue                作品列表（卡片网格）
+│   │       ├── NovelDetail.vue              编辑器（分步生成 + 章节管理，自动保存）
+│   │       ├── ModelList.vue                模型配置 CRUD（弹窗表单）
+│   │       └── SystemConfig.vue             系统配置
+│   └── vite.config.js                       Vite 配置
+├── electron/                                Electron 桌面打包配置
+│   ├── main.js                              主进程
+│   ├── preload.js                           预加载脚本
+│   └── builder.json                         打包配置
+├── src/main/resources/mapper/               MyBatis XML 映射（预留）
+├── pom.xml                                  Maven 构建
+├── package.json                             前端依赖
+└── data/novel.db                            SQLite 数据库（自动创建）
 ```
 
 ## 路由
@@ -47,6 +85,18 @@ novel/
 | `/#/novel` | 作品列表 | 卡片式展示所有作品 |
 | `/#/novel/:id` | 编辑器 | 分步生成（简介→大纲→章节） + 章节管理 |
 | `/#/models` | 模型管理 | LLM 配置（Ollama/OpenAI） |
+| `/#/config` | 系统配置 | 系统参数配置 |
+
+## API 概览
+
+| 控制器 | 主要接口 |
+|---|---|
+| `NovelController` | CRUD + `PUT /api/novels/:id` 保存作品信息 |
+| `ChapterController` | 章节 CRUD + `PUT /api/chapters/:id` 保存章节 |
+| `GenerationController` | `POST /api/generate/{id}/synopsis\|outline\|chapter-summary\|chapter-content/{chId}` |
+| `ModelConfigController` | 模型配置 CRUD |
+| `SystemConfigController` | 系统配置 CRUD |
+| `ChatController` | `POST /api/chat/send` 聊天对话 |
 
 ## 关键模式
 
@@ -84,6 +134,7 @@ novel/
 - `novel_entity`: `id, title, content, synopsis, outline, create_time, update_time`
 - `chapter`: `id, novel_id, chapter_number, title, summary, content, create_time, update_time`
 - `model_config`: `id, name, provider, base_url, model_name, api_key, options, enabled, create_time, update_time`
+- `system_config`: `id, config_key, config_value, description, create_time, update_time`
 
 ### 缓存
 - Spring `@Cacheable` + `@EnableCaching`
@@ -99,12 +150,18 @@ novel/
 - `AgentScopeConfig.buildModel(name)` 根据 DB 配置构建 `OpenAIChatModel` 或 `OllamaChatModel`
 - 章节梗概生成时自动传入前几章的梗概作为上下文，确保情节连贯
 - 章节正文生成时自动传入上一章正文末尾 500 字作为衔接参考
+- 提示词模板统一管理在 `java/src/main/resources/prompts/` 目录下，通过 `PromptLoader` 加载
+
+### 聊天功能
+- `ChatController` + `ChatService` 提供对话式交互
+- `ChatPanel.vue` 前端聊天面板组件
+- 使用独立的提示词模板 `chat-editor-system.md`
 
 ### API 响应格式
 所有接口返回 `Result<T>`：`{ code, message, data }`。成功 `Result.success(data)`，失败 `Result.failed(ResultCode.xxx, msg)`。
 
 ### 前端规范
-- Hash 路由（`createWebHashHistory`），Vue 构建产物输出到 `src/main/resources/static/`
+- Hash 路由（`createWebHashHistory`），Vue 构建产物输出到 `java/src/main/resources/static/`
 - Sidebar 全局导航（App.vue），Nav 不放在各页面里
 - NovelDetail 使用三个可折叠区域（简介/大纲/章节管理），每个区域有独立 textarea 和生成按钮
 - 章节管理支持添加/删除章节，每章可独立编辑标题/梗概/正文
