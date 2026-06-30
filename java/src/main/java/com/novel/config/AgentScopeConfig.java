@@ -1,5 +1,6 @@
 package com.novel.config;
 
+import com.novel.dto.ModelProperties;
 import com.novel.entity.ModelConfig;
 import com.novel.service.ModelConfigService;
 import io.agentscope.core.model.Model;
@@ -8,10 +9,8 @@ import io.agentscope.core.model.OpenAIChatModel;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,26 +19,24 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class AgentScopeConfig {
 
-    @Autowired
-    private ModelConfigService modelConfigService;
+    private final ModelConfigService modelConfigService;
 
-    private final Map<String, Map<String, String>> modelRegistry = new ConcurrentHashMap<>();
+    private final Map<String, ModelProperties> modelRegistry = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void initModels() {
         var enabledModels = modelConfigService.listEnabled();
         for (ModelConfig mc : enabledModels) {
             try {
-                Map<String, String> props = new HashMap<>();
-                props.put("provider", mc.getProvider());
-                props.put("modelName", mc.getModelName());
-                props.put("baseUrl", mc.getBaseUrl() != null ? mc.getBaseUrl() :
-                    "ollama".equals(mc.getProvider()) ? "http://localhost:11434" :
-                    "deepseek".equals(mc.getProvider()) ? "https://api.deepseek.com" : null);
-                props.put("apiKey", mc.getApiKey());
-                if (mc.getOptions() != null) {
-                    props.put("options", mc.getOptions());
-                }
+                ModelProperties props = new ModelProperties(
+                    mc.getProvider(),
+                    mc.getModelName(),
+                    mc.getBaseUrl() != null ? mc.getBaseUrl() :
+                        "ollama".equals(mc.getProvider()) ? "http://localhost:11434" :
+                        "deepseek".equals(mc.getProvider()) ? "https://api.deepseek.com" : null,
+                    mc.getApiKey(),
+                    mc.getOptions()
+                );
                 modelRegistry.put(mc.getName(), props);
                 log.info("Registered model: {} ({})", mc.getName(), mc.getProvider());
             } catch (Exception e) {
@@ -49,47 +46,39 @@ public class AgentScopeConfig {
         log.info("AgentScope initialized with {} models", enabledModels.size());
     }
 
-    public Map<String, String> getModel(String name) {
+    public ModelProperties getModel(String name) {
         return modelRegistry.get(name);
     }
 
-    public Map<String, Map<String, String>> getAllModels() {
+    public Map<String, ModelProperties> getAllModels() {
         return modelRegistry;
     }
 
-    /**
-     * 根据模型名称构建 AgentScope Model 对象
-     */
     public Model buildModel(String name) {
-        Map<String, String> config = modelRegistry.get(name);
+        ModelProperties config = modelRegistry.get(name);
         if (config == null) {
             throw new IllegalArgumentException("Model not found: " + name);
         }
 
-        String provider = config.get("provider");
-        String baseUrl = config.get("baseUrl");
-        String apiKey = config.get("apiKey");
-        String modelName = config.get("modelName");
-
-        if ("ollama".equals(provider)) {
+        if ("ollama".equals(config.getProvider())) {
             return OllamaChatModel.builder()
-                    .baseUrl(baseUrl)
-                    .modelName(modelName)
+                    .baseUrl(config.getBaseUrl())
+                    .modelName(config.getModelName())
                     .build();
         }
 
-        if ("deepseek".equals(provider)) {
+        if ("deepseek".equals(config.getProvider())) {
             return OpenAIChatModel.builder()
-                    .baseUrl(baseUrl != null ? baseUrl : "https://api.deepseek.com")
-                    .apiKey(apiKey)
-                    .modelName(modelName)
+                    .baseUrl(config.getBaseUrl() != null ? config.getBaseUrl() : "https://api.deepseek.com")
+                    .apiKey(config.getApiKey())
+                    .modelName(config.getModelName())
                     .build();
         }
 
         return OpenAIChatModel.builder()
-                .baseUrl(baseUrl)
-                .apiKey(apiKey)
-                .modelName(modelName)
+                .baseUrl(config.getBaseUrl())
+                .apiKey(config.getApiKey())
+                .modelName(config.getModelName())
                 .build();
     }
 }

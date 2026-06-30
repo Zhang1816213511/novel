@@ -173,3 +173,5 @@ novel/
 - Entity/DTO 使用 Lombok `@Data`，日志 `@Slf4j`，DI 使用 `@RequiredArgsConstructor` + `final` 字段
 - MyBatis-Plus 实体加 `@TableName` + `@TableId`
 - 全局异常由 `GlobalExceptionHandler` 统一处理
+- 接口参数等一律不允许用Map，全部创建实体类进行传参
+- service 先创建接口再创建对应的实现类，调用时使用接口

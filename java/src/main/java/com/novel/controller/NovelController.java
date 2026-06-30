@@ -6,7 +6,6 @@ import com.novel.service.NovelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,8 +16,7 @@ import java.util.List;
 @Tag(name = "作品管理", description = "小说/写作项目管理接口")
 public class NovelController {
 
-    @Autowired
-    private NovelService novelService;
+    private final NovelService novelService;
 
     @PostMapping
     @Operation(summary = "新建作品")

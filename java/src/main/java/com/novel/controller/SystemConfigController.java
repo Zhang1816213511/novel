@@ -1,14 +1,13 @@
 package com.novel.controller;
 
 import com.novel.common.Result;
+import com.novel.dto.SystemStatusResponse;
+import com.novel.dto.WorkspaceRootRequest;
 import com.novel.service.SystemConfigService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/config")
@@ -26,8 +25,8 @@ public class SystemConfigController {
 
     @PutMapping("/workspace-root")
     @Operation(summary = "设置工作区根目录")
-    public Result<Void> setWorkspaceRoot(@RequestBody Map<String, String> body) {
-        String root = body.get("workspaceRoot");
+    public Result<Void> setWorkspaceRoot(@RequestBody WorkspaceRootRequest body) {
+        String root = body.getWorkspaceRoot();
         if (root == null || root.isBlank()) {
             return Result.validateFailed("工作目录路径不能为空");
         }
@@ -37,11 +36,8 @@ public class SystemConfigController {
 
     @GetMapping("/status")
     @Operation(summary = "获取系统配置状态（是否已配置工作目录）")
-    public Result<Map<String, Object>> getStatus() {
+    public Result<SystemStatusResponse> getStatus() {
         String root = systemConfigService.getWorkspaceRoot();
-        Map<String, Object> status = new HashMap<>();
-        status.put("configured", root != null);
-        status.put("workspaceRoot", root);
-        return Result.success(status);
+        return Result.success(new SystemStatusResponse(root != null, root));
     }
 }
