@@ -35,7 +35,7 @@ public class DataSourceConfig {
             }
             return clean.toString();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to load schema.sql", e);
+            throw new RuntimeException("加载 schema.sql 失败", e);
         }
     }
 
@@ -64,8 +64,9 @@ public class DataSourceConfig {
             try { stmt.executeUpdate("ALTER TABLE novel_entity ADD COLUMN workspace_dir TEXT"); } catch (Exception ignored) {}
             try { stmt.executeUpdate("ALTER TABLE chapter ADD COLUMN md_dir TEXT"); } catch (Exception ignored) {}
             try { stmt.executeUpdate("ALTER TABLE model_config ADD COLUMN enabled INTEGER DEFAULT 1"); } catch (Exception ignored) {}
+            try { stmt.executeUpdate("ALTER TABLE novel_character ADD COLUMN faction_id INTEGER"); } catch (Exception ignored) {}
         } catch (Exception e) {
-            throw new RuntimeException("Database initialization failed", e);
+            throw new RuntimeException("数据库初始化失败", e);
         }
 
         return ds;

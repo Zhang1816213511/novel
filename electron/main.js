@@ -93,16 +93,16 @@ function startBackend() {
     ], { stdio: ['pipe', 'pipe', 'pipe'] });
 
     javaProcess.stdout.on('data', d =>
-      console.log(`[Backend] ${d.toString().trim()}`)
+      console.log(`[后端] ${d.toString().trim()}`)
     );
     javaProcess.stderr.on('data', d =>
-      console.error(`[Backend] ${d.toString().trim()}`)
+      console.error(`[后端] ${d.toString().trim()}`)
     );
     javaProcess.on('error', err =>
       reject(new Error(`启动 Java 进程失败: ${err.message}`))
     );
     javaProcess.on('exit', code => {
-      console.log(`[Backend] 进程退出, code=${code}`);
+      console.log(`[后端] 进程退出, code=${code}`);
       javaProcess = null;
     });
 

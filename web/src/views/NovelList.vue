@@ -156,14 +156,14 @@ function formatDate(dateStr) {
   margin: 0 auto;
 }
 
-/* ===== Grid ===== */
+/* ===== 卡片网格 ===== */
 .novel-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1rem;
 }
 
-/* ===== Card ===== */
+/* ===== 卡片 ===== */
 .novel-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
@@ -226,7 +226,7 @@ function formatDate(dateStr) {
   font-weight: 500;
 }
 
-/* ===== Config Warning ===== */
+/* ===== 配置警告 ===== */
 .config-warning {
   display: flex;
   align-items: center;
@@ -248,7 +248,7 @@ function formatDate(dateStr) {
   text-decoration: underline;
 }
 
-/* ===== Preview Path ===== */
+/* ===== 预览路径 ===== */
 .preview-path {
   background: var(--color-bg);
   border-radius: var(--radius-sm);
@@ -266,7 +266,7 @@ function formatDate(dateStr) {
   margin-top: 4px;
 }
 
-/* ===== Empty State ===== */
+/* ===== 空状态 ===== */
 .empty {
   text-align: center;
   padding: 4rem 2rem;

@@ -54,15 +54,6 @@
           </svg>
           <span>我的作品</span>
         </router-link>
-        <router-link :to="charLink" class="nav-item" :class="{ active: charActive }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-            <path d="M16 3.13a4 4 0 010 7.75"/>
-          </svg>
-          <span>角色管理</span>
-        </router-link>
         <router-link to="/models" class="nav-item" active-class="active">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
@@ -104,16 +95,6 @@ export default {
     const isElectron = ref(!!window.electronAPI);
     const isMaxed = ref(false);
 
-    const charLink = computed(() => {
-      return novelStore.currentNovelId
-        ? `/novel/${novelStore.currentNovelId}/characters`
-        : '/novel';
-    });
-
-    const charActive = computed(() => {
-      return route.path.endsWith('/characters');
-    });
-
     const minimize = () => window.electronAPI?.minimize();
     const toggleMax = () => window.electronAPI?.maximize();
     const closeWin = () => window.electronAPI?.close();
@@ -125,13 +106,13 @@ export default {
       }
     });
 
-    return { isElectron, isMaxed, charLink, charActive, minimize, toggleMax, closeWin };
+    return { isElectron, isMaxed, minimize, toggleMax, closeWin };
   },
 };
 </script>
 
 <style>
-/* ===== CSS Variables ===== */
+/* ===== CSS 变量 ===== */
 :root {
   --color-primary: #42b983;
   --color-primary-dark: #35a371;
@@ -173,7 +154,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ===== Common Button Styles ===== */
+/* ===== 通用按钮样式 ===== */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -217,7 +198,7 @@ body {
   color: white;
 }
 
-/* ===== Common Modal Styles ===== */
+/* ===== 通用弹窗样式 ===== */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -254,7 +235,7 @@ body {
   border-top: 1px solid var(--color-border);
 }
 
-/* ===== Common Form Styles ===== */
+/* ===== 通用表单样式 ===== */
 .input, .textarea {
   width: 100%;
   padding: 0.6rem 0.75rem;
@@ -281,7 +262,7 @@ select.input { background: var(--color-surface); }
   font-size: 0.85rem;
 }
 
-/* ===== Animations ===== */
+/* ===== 动画 ===== */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -314,13 +295,13 @@ select.input { background: var(--color-surface); }
   background: #94a3b8;
 }
 
-/* Firefox 滚动条 */
+/* Firefox 滚动条样式 */
 * {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
 
-/* ===== Loading / Empty States ===== */
+/* ===== 加载 / 空状态 ===== */
 .loading, .empty {
   text-align: center;
   padding: 4rem 2rem;
@@ -328,7 +309,7 @@ select.input { background: var(--color-surface); }
   font-size: 0.95rem;
 }
 
-/* ===== Page Header ===== */
+/* ===== 页面头部 ===== */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -348,7 +329,7 @@ select.input { background: var(--color-surface); }
   min-height: 100vh;
 }
 
-/* ===== Titlebar (Electron) ===== */
+/* ===== 标题栏（Electron） ===== */
 .titlebar {
   position: fixed;
   top: 0;
@@ -402,7 +383,7 @@ select.input { background: var(--color-surface); }
   color: #fff;
 }
 
-/* ===== Sidebar ===== */
+/* ===== 侧边栏 ===== */
 .sidebar {
   width: 220px;
   background: var(--color-sidebar-bg);
@@ -434,7 +415,7 @@ select.input { background: var(--color-surface); }
   letter-spacing: 0.5px;
 }
 
-/* ===== Nav ===== */
+/* ===== 导航 ===== */
 .sidebar-nav {
   flex: 1;
   padding: 0.75rem;
@@ -466,7 +447,7 @@ select.input { background: var(--color-surface); }
   stroke: var(--color-primary);
 }
 
-/* ===== Footer ===== */
+/* ===== 底部 ===== */
 .sidebar-footer {
   padding: 0.5rem 0.75rem;
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -503,7 +484,7 @@ select.input { background: var(--color-surface); }
   padding: 0.25rem 0.75rem;
 }
 
-/* ===== Main Content ===== */
+/* ===== 主内容区 ===== */
 .main-content {
   flex: 1;
   margin-left: 220px;

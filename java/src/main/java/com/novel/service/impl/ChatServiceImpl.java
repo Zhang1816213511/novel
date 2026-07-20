@@ -1,15 +1,22 @@
 package com.novel.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.novel.config.AgentScopeConfig;
 import com.novel.dto.ChatRequest;
 import com.novel.dto.ChatResponse;
 import com.novel.entity.Chapter;
 import com.novel.entity.Novel;
 import com.novel.service.AgentPipelineService;
 import com.novel.service.ChapterService;
+import com.novel.service.ChatHistoryService;
 import com.novel.service.ChatService;
+import com.novel.mapper.FactionMapper;
 import com.novel.service.MarkdownStorageService;
+import com.novel.service.NovelCharacterService;
 import com.novel.service.NovelService;
 import com.novel.service.PromptLoader;
+import com.novel.tool.NovelChatTools;
+import io.agentscope.core.tool.Toolkit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,22 +34,82 @@ public class ChatServiceImpl implements ChatService {
     private final MarkdownStorageService markdownStorage;
     private final AgentPipelineService agentPipeline;
     private final PromptLoader promptLoader;
+    private final AgentScopeConfig agentScopeConfig;
+    private final NovelCharacterService characterService;
+    private final ChatHistoryService chatHistoryService;
+    private final FactionMapper factionMapper;
 
     @Override
     public ChatResponse chat(Long novelId, ChatRequest request) {
         Novel novel = novelService.getById(novelId);
         if (novel == null) throw new IllegalArgumentException("作品不存在");
 
+        String modelName = request.getModelName();
+        if (modelName == null || modelName.isBlank()) {
+            modelName = agentScopeConfig.getAllModels().keySet().stream().findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("没有可用的模型，请先在模型管理中配置并启用模型"));
+        }
+
+        String refsJson = request.getRefs() != null && !request.getRefs().isEmpty()
+                ? toJson(request.getRefs()) : null;
+        chatHistoryService.saveMessage(novelId, "user", request.getMessage(), refsJson, null);
+
+        Toolkit toolkit = new Toolkit();
+        toolkit.registerTool(new NovelChatTools(
+                novelId, novel.getWorkspaceDir(),
+                novelService, chapterService, markdownStorage, characterService, factionMapper
+        ));
+
         String context = buildContext(novel, request);
         String userPrompt = buildUserPrompt(request.getMessage(), context);
-        String agentOutput = agentPipeline.generateWithReview(
-                request.getModelName(),
-                promptLoader.get("chat-editor-system"),
-                promptLoader.get("reviewer-system"),
-                userPrompt
+        String systemPrompt = promptLoader.get("noval") + "\n\n" + promptLoader.get("chat-editor-system");
+        String agentOutput = agentPipeline.generate(
+                modelName,
+                systemPrompt,
+                userPrompt,
+                toolkit
         );
 
-        return parseResponse(agentOutput, novel, request);
+        ChatResponse response = parseResponse(agentOutput, novel, request);
+        response.setUpdated(buildUpdatedContent(novel));
+
+        String changesJson = response.getChanges() != null && !response.getChanges().isEmpty()
+                ? toJson(response.getChanges()) : null;
+        chatHistoryService.saveMessage(novelId, "assistant", response.getReply(), null, changesJson);
+
+        return response;
+    }
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    private String toJson(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private ChatResponse.UpdatedContent buildUpdatedContent(Novel novel) {
+        List<ChatResponse.ChapterState> chapterStates = new ArrayList<>();
+        List<Chapter> chapters = chapterService.listByNovelId(novel.getId());
+        for (Chapter ch : chapters) {
+            chapterStates.add(ChatResponse.ChapterState.builder()
+                    .chapterNumber(ch.getChapterNumber())
+                    .title(ch.getTitle())
+                    .summary(ch.getMdDir() != null && novel.getWorkspaceDir() != null
+                            ? markdownStorage.readChapterSummary(novel.getWorkspaceDir(), ch.getMdDir()) : null)
+                    .content(ch.getMdDir() != null && novel.getWorkspaceDir() != null
+                            ? markdownStorage.readChapterContent(novel.getWorkspaceDir(), ch.getMdDir()) : null)
+                    .build());
+        }
+        return ChatResponse.UpdatedContent.builder()
+                .synopsis(novel.getWorkspaceDir() != null
+                        ? markdownStorage.readSynopsis(novel.getWorkspaceDir()) : null)
+                .outline(novel.getWorkspaceDir() != null
+                        ? markdownStorage.readOutline(novel.getWorkspaceDir()) : null)
+                .chapters(chapterStates)
+                .build();
     }
 
     private String buildContext(Novel novel, ChatRequest request) {

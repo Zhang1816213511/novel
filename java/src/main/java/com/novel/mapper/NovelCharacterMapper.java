@@ -15,4 +15,7 @@ public interface NovelCharacterMapper extends BaseMapper<NovelCharacter> {
 
     @Select("SELECT last_insert_rowid()")
     Long getLastInsertId();
+
+    @org.apache.ibatis.annotations.Update("UPDATE novel_character SET faction_id = NULL WHERE faction_id = #{factionId}")
+    void clearFactionId(Long factionId);
 }

@@ -38,12 +38,12 @@ public class AgentScopeConfig {
                     mc.getOptions()
                 );
                 modelRegistry.put(mc.getName(), props);
-                log.info("Registered model: {} ({})", mc.getName(), mc.getProvider());
+                log.info("已注册模型: {} ({})", mc.getName(), mc.getProvider());
             } catch (Exception e) {
-                log.warn("Failed to register model: {}", mc.getName(), e);
+                log.warn("注册模型失败: {}", mc.getName(), e);
             }
         }
-        log.info("AgentScope initialized with {} models", enabledModels.size());
+        log.info("AgentScope 初始化完成，共 {} 个模型", enabledModels.size());
     }
 
     public ModelProperties getModel(String name) {
@@ -54,10 +54,38 @@ public class AgentScopeConfig {
         return modelRegistry;
     }
 
+    public void registerModel(ModelConfig mc) {
+        ModelProperties props = new ModelProperties(
+            mc.getProvider(),
+            mc.getModelName(),
+            mc.getBaseUrl() != null ? mc.getBaseUrl() :
+                "ollama".equals(mc.getProvider()) ? "http://localhost:11434" :
+                "deepseek".equals(mc.getProvider()) ? "https://api.deepseek.com" : null,
+            mc.getApiKey(),
+            mc.getOptions()
+        );
+        modelRegistry.put(mc.getName(), props);
+        log.info("已注册模型: {} ({})", mc.getName(), mc.getProvider());
+    }
+
+    public void unregisterModel(String name) {
+        modelRegistry.remove(name);
+        log.info("已注销模型: {}", name);
+    }
+
     public Model buildModel(String name) {
         ModelProperties config = modelRegistry.get(name);
         if (config == null) {
-            throw new IllegalArgumentException("Model not found: " + name);
+            var mc = modelConfigService.listEnabled().stream()
+                    .filter(m -> m.getName().equals(name))
+                    .findFirst().orElse(null);
+            if (mc != null) {
+                registerModel(mc);
+                config = modelRegistry.get(name);
+            }
+        }
+        if (config == null) {
+            throw new IllegalArgumentException("模型未找到: " + name);
         }
 
         if ("ollama".equals(config.getProvider())) {

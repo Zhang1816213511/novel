@@ -25,7 +25,7 @@ public class MarkdownStorageServiceImpl implements MarkdownStorageService {
         Path dir = Paths.get(workspaceDir);
         try {
             Files.createDirectories(dir);
-            log.info("Workspace initialized: {}", dir.toAbsolutePath());
+            log.info("工作目录已初始化: {}", dir.toAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException("无法创建工作目录: " + workspaceDir, e);
         }
@@ -57,7 +57,7 @@ public class MarkdownStorageServiceImpl implements MarkdownStorageService {
         Path dir = Paths.get(workspaceDir, chapterDir);
         try {
             Files.createDirectories(dir);
-            log.info("Chapter dir created: {}", dir.toAbsolutePath());
+            log.info("章节目录已创建: {}", dir.toAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException("无法创建章节目录: " + dir, e);
         }
@@ -95,7 +95,7 @@ public class MarkdownStorageServiceImpl implements MarkdownStorageService {
                                 try { Files.deleteIfExists(p); } catch (IOException ignored) {}
                             });
                 }
-                log.info("Chapter dir deleted: {}", dir);
+                log.info("章节目录已删除: {}", dir);
             }
         } catch (IOException e) {
             log.warn("删除章节目录失败: {}", dir, e);

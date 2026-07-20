@@ -1,6 +1,6 @@
 package com.novel.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.novel.entity.Chapter;
 import com.novel.entity.Novel;
 import com.novel.mapper.ChapterMapper;

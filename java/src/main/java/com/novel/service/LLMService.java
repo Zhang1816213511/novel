@@ -35,7 +35,7 @@ public class LLMService {
     public String chat(String modelName, String systemPrompt, String userMessage, double temperature) {
         ModelProperties config = agentScopeConfig.getModel(modelName);
         if (config == null) {
-            throw new IllegalArgumentException("Model not found: " + modelName);
+            throw new IllegalArgumentException("模型未找到: " + modelName);
         }
 
         String baseUrl = config.getBaseUrl();
@@ -62,18 +62,18 @@ public class LLMService {
         try {
             var response = restTemplate.postForEntity(url, new HttpEntity<>(requestBody, headers), ChatCompletionResponse.class);
             ChatCompletionResponse body = response.getBody();
-            if (body == null) throw new RuntimeException("Empty response from LLM");
+            if (body == null) throw new RuntimeException("LLM 返回空响应");
 
             if (body.getChoices() == null || body.getChoices().isEmpty())
-                throw new RuntimeException("No choices in LLM response");
+                throw new RuntimeException("LLM 响应中无 choices");
 
             ChatCompletionResponse.Message message = body.getChoices().get(0).getMessage();
-            if (message == null) throw new RuntimeException("No message in LLM response choice");
+            if (message == null) throw new RuntimeException("LLM 响应 choice 中无 message");
 
             return message.getContent();
         } catch (Exception e) {
-            log.error("LLM call failed: model={}, error={}", modelName, e.getMessage());
-            throw new RuntimeException("LLM call failed: " + e.getMessage(), e);
+            log.error("LLM 调用失败: model={}, error={}", modelName, e.getMessage());
+            throw new RuntimeException("LLM 调用失败: " + e.getMessage(), e);
         }
     }
 

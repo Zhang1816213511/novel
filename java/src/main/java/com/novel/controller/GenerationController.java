@@ -16,7 +16,7 @@ public class GenerationController {
 
     private final NovelGenerationService generationService;
 
-    // ========== Step-by-step generation ==========
+    // ========== 分步生成 ==========
 
     @PostMapping("/{novelId}/synopsis")
     @Operation(summary = "生成作品简介")

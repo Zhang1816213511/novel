@@ -1,6 +1,6 @@
 <template>
   <div class="novel-detail">
-    <!-- Header -->
+    <!-- 头部 -->
     <header class="detail-header">
       <button @click="goBack" class="btn btn-sm btn-back">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -39,7 +39,7 @@
       </button>
     </nav>
 
-    <!-- Tab Content -->
+    <!-- 标签页内容 -->
     <div class="body-layout">
       <!-- 简介大纲 Tab (merged) -->
       <div v-if="activeTab === 'synopsis-outline'" class="tab-content synopsis-outline">
@@ -61,7 +61,7 @@
         </section>
       </div>
 
-      <!-- Chapters Tab -->
+      <!-- 章节标签页 -->
       <template v-if="activeTab === 'chapters'">
         <aside class="chapter-sidebar">
           <div class="sidebar-header">
@@ -105,12 +105,20 @@
         </div>
       </template>
 
-      <!-- Characters Tab -->
-      <CharacterManager v-if="activeTab === 'characters'" :novelId="Number(route.params.id)"
-        @characters-updated="onCharactersUpdated" />
+      <!-- 角色标签页 -->
+      <div v-if="activeTab === 'characters'" class="tab-content characters-tab">
+        <div class="char-sub-nav">
+          <button :class="{ active: charSubTab === 'list' }" @click="charSubTab = 'list'">角色列表</button>
+          <button :class="{ active: charSubTab === 'factions' }" @click="charSubTab = 'factions'">势力图谱</button>
+        </div>
+        <CharacterManager v-if="charSubTab === 'list'" :novelId="Number(route.params.id)"
+          :factions="factions" @characters-updated="onCharactersUpdated" />
+        <FactionManager v-if="charSubTab === 'factions'" :novelId="Number(route.params.id)"
+          :character-counts="characterFactionCounts" @factions-updated="onFactionsUpdated" />
+      </div>
     </div>
 
-    <!-- Character Info Popup -->
+    <!-- 角色信息弹窗 -->
     <CharacterInfoPopup :character="clickedCharacter" @close="clickedCharacter = null" />
 
     <!-- AI 对话浮动按钮 -->
@@ -126,6 +134,7 @@
       :novelId="Number(route.params.id)"
       :chapters="chapters"
       :modelName="selectedModel"
+      :models="models"
       @close="showChat = false"
       @apply-synopsis="onApplySynopsis"
       @apply-outline="onApplyOutline"
@@ -142,6 +151,7 @@ import ChatPanel from '../components/ChatPanel.vue'
 import RichEditor from '../components/RichEditor.vue'
 import CharacterManager from '../components/CharacterManager.vue'
 import CharacterInfoPopup from '../components/CharacterInfoPopup.vue'
+import FactionManager from '../components/FactionManager.vue'
 import { novelStore } from '../stores/novelStore.js'
 
 const props = defineProps({
@@ -161,6 +171,17 @@ const showChat = ref(false)
 const activeTab = ref(props.tab || 'synopsis-outline')
 const allCharacters = ref([])
 const clickedCharacter = ref(null)
+const charSubTab = ref('list')
+const factions = ref([])
+const characterFactionCounts = computed(() => {
+  const counts = {}
+  for (const ch of allCharacters.value) {
+    if (ch.factionId) {
+      counts[ch.factionId] = (counts[ch.factionId] || 0) + 1
+    }
+  }
+  return counts
+})
 
 let saveTimer = null
 let chapterTimers = {}
@@ -275,12 +296,16 @@ function onCharactersUpdated(chars) {
   allCharacters.value = chars
 }
 
+function onFactionsUpdated(f) {
+  factions.value = f
+}
+
 function updateWordCount() {
   const allContent = chapters.value.map(c => c.content || '').join('')
   wordCount.value = allContent.length
 }
 
-// ========== Auto-Save ==========
+// ========== 自动保存 ==========
 
 function scheduleSave() {
   if (saveTimer) clearTimeout(saveTimer)
@@ -321,7 +346,7 @@ function scheduleChapterSave(chapter) {
   }, 800)
 }
 
-// ========== Chapters ==========
+// ========== 章节管理 ==========
 
 async function addChapter() {
   try {
@@ -387,7 +412,7 @@ function onApplyChapter(chapterNumber, section, content) {
   margin: 0 auto;
 }
 
-/* ===== Header ===== */
+/* ===== 头部 ===== */
 .detail-header {
   display: flex;
   align-items: center;
@@ -427,7 +452,7 @@ function onApplyChapter(chapterNumber, section, content) {
 .stat.unsaved { color: var(--color-warning); }
 .btn-back { flex-shrink: 0; }
 
-/* ===== Navigation Bar ===== */
+/* ===== 导航栏 ===== */
 .detail-nav {
   display: flex;
   gap: 0;
@@ -477,7 +502,34 @@ function onApplyChapter(chapterNumber, section, content) {
   stroke: var(--color-primary);
 }
 
-/* ===== Tab Content ===== */
+.char-sub-nav {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 0.75rem;
+}
+.char-sub-nav button {
+  padding: 4px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  transition: all 0.15s;
+}
+.char-sub-nav button.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.characters-tab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ===== 标签页内容 ===== */
 .tab-content {
   flex: 1;
   display: flex;
@@ -535,7 +587,7 @@ function onApplyChapter(chapterNumber, section, content) {
   font-weight: 500;
 }
 
-/* ===== Body Layout (sidebar + main) ===== */
+/* ===== 主体布局（侧边栏 + 主内容） ===== */
 .body-layout {
   flex: 1;
   display: flex;
@@ -543,7 +595,7 @@ function onApplyChapter(chapterNumber, section, content) {
   overflow: hidden;
 }
 
-/* ===== Chapter Sidebar ===== */
+/* ===== 章节侧边栏 ===== */
 .chapter-sidebar {
   width: 200px;
   flex-shrink: 0;
@@ -625,7 +677,7 @@ function onApplyChapter(chapterNumber, section, content) {
   font-size: 0.8rem;
 }
 
-/* ===== Main Content ===== */
+/* ===== 主内容区 ===== */
 .main-content {
   flex: 1;
   display: flex;
@@ -634,7 +686,7 @@ function onApplyChapter(chapterNumber, section, content) {
   overflow: hidden;
 }
 
-/* ===== Chapter Editor ===== */
+/* ===== 章节编辑器 ===== */
 .chapter-editor {
   flex: 1;
   background: var(--color-surface);
@@ -679,7 +731,7 @@ function onApplyChapter(chapterNumber, section, content) {
   min-height: 300px;
 }
 
-/* ===== Placeholder ===== */
+/* ===== 占位符 ===== */
 .chapter-editor-placeholder {
   flex: 1;
   display: flex;
@@ -692,7 +744,7 @@ function onApplyChapter(chapterNumber, section, content) {
   font-size: 0.9rem;
 }
 
-/* ===== Floating Chat Button ===== */
+/* ===== 浮动聊天按钮 ===== */
 .chat-fab {
   position: fixed;
   right: 1.5rem;

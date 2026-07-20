@@ -1,7 +1,7 @@
 <template>
   <div class="chat-overlay" v-if="visible" @click.self="$emit('close')">
     <div class="chat-panel" @click.stop>
-      <!-- Header -->
+      <!-- 头部 -->
       <div class="chat-header">
         <h3>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -9,17 +9,26 @@
           </svg>
           AI 对话
         </h3>
-        <button class="chat-close" @click="$emit('close')" title="关闭">
-          <svg viewBox="0 0 12 12" width="12" height="12">
-            <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" stroke-width="1.5"/>
-            <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" stroke-width="1.5"/>
-          </svg>
-        </button>
+        <div class="header-right">
+          <select v-model="currentModel" class="model-select" title="选择模型">
+            <option value="" disabled>选择模型...</option>
+            <option v-for="m in models" :key="m.id" :value="m.name">{{ m.name }}</option>
+          </select>
+          <button class="chat-clear" @click="clearHistory" title="清空历史" v-if="messages.length">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </button>
+          <button class="chat-close" @click="$emit('close')" title="关闭">
+            <svg viewBox="0 0 12 12" width="12" height="12">
+              <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" stroke-width="1.5"/>
+              <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <!-- Messages -->
+      <!-- 消息列表 -->
       <div class="chat-messages" ref="messagesRef">
-        <!-- Welcome -->
+        <!-- 欢迎 -->
         <div v-if="messages.length === 0" class="chat-welcome">
           <div class="welcome-icon">
             <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -32,7 +41,7 @@
             例如：<span class="example">@简介 改成更简洁的风格</span>
           </p>
 
-          <!-- Quick Templates -->
+          <!-- 快速模板 -->
           <div class="templates">
             <p class="templates-title">快速模板</p>
             <div class="template-grid">
@@ -64,15 +73,15 @@
         </div>
 
         <div v-for="(msg, i) in messages" :key="i" :class="['msg', msg.role]">
-          <!-- Refs chips -->
+          <!-- 引用标签 -->
           <div v-if="msg.refs?.length" class="msg-refs">
             <span v-for="(ref, ri) in msg.refs" :key="ri" class="ref-chip">
               {{ formatRefLabel(ref) }}
             </span>
           </div>
-          <!-- Content -->
+          <!-- 内容 -->
           <div class="msg-content" v-html="renderMarkdown(msg.content)"></div>
-          <!-- Changes (apply buttons) -->
+          <!-- 修改（应用按钮） -->
           <div v-if="msg.changes?.length" class="msg-changes">
             <div v-for="(ch, ci) in msg.changes" :key="ci" class="change-item">
               <span class="change-label">{{ formatChangeLabel(ch) }}</span>
@@ -81,7 +90,7 @@
           </div>
         </div>
 
-        <!-- Loading -->
+        <!-- 加载中 -->
         <div v-if="loading" class="msg assistant">
           <div class="msg-content loading-dots">
             <span></span><span></span><span></span>
@@ -89,9 +98,9 @@
         </div>
       </div>
 
-      <!-- Input Area -->
+      <!-- 输入区 -->
       <div class="chat-input-area">
-        <!-- Active refs chips in input -->
+        <!-- 输入区中的活跃引用标签 -->
         <div v-if="activeRefs.length" class="active-refs">
           <span v-for="(ref, i) in activeRefs" :key="i" class="ref-chip">
             {{ formatRefLabel(ref) }}
@@ -99,7 +108,7 @@
           </span>
         </div>
 
-        <!-- Autocomplete dropdown -->
+        <!-- 自动补全下拉 -->
         <div v-if="showAutocomplete" class="autocomplete-dropdown" ref="autoRef">
           <div v-for="(item, i) in filteredAutocomplete" :key="i"
             :class="['auto-item', { active: i === autoIndex }]"
@@ -148,12 +157,14 @@ export default {
     novelId: { type: Number, required: true },
     chapters: { type: Array, default: () => [] },
     modelName: { type: String, default: '' },
+    models: { type: Array, default: () => [] },
   },
-  emits: ['close', 'apply-synopsis', 'apply-outline', 'apply-chapter'],
+  emits: ['close', 'apply-synopsis', 'apply-outline', 'apply-chapter', 'update:modelName'],
   setup(props, { emit }) {
     const inputText = ref('')
     const messages = ref([])
     const loading = ref(false)
+    const currentModel = ref(props.modelName)
     const messagesRef = ref(null)
     const inputRef = ref(null)
     const composing = ref(false)
@@ -167,7 +178,7 @@ export default {
       return props.chapters[0].chapterNumber || 1
     })
 
-    // ─── Autocomplete items ───
+    // ─── 自动补全项 ───
     const autocompleteItems = computed(() => {
       const items = [
         { id: 'synopsis', label: '简介', icon: '📝', desc: '作品简介', type: 'synopsis' },
@@ -239,7 +250,7 @@ export default {
       return s
     }
 
-    // ─── Input handling ───
+    // ─── 输入处理 ───
     function onInputChange() {
       const val = inputText.value
       // 检测 @ 触发 autocomplete
@@ -276,7 +287,7 @@ export default {
           }
         }
       }
-      // Enter without shift → send
+      // 回车（不加 Shift）→ 发送
       if (e.key === 'Enter' && !e.shiftKey && !showAutocomplete.value && !composing.value) {
         e.preventDefault()
         sendMessage()
@@ -304,7 +315,7 @@ export default {
       })
     }
 
-    // ─── Send ───
+    // ─── 发送 ───
     const canSend = computed(() => inputText.value.trim() && !loading.value)
 
     async function sendMessage() {
@@ -324,7 +335,7 @@ export default {
         const res = await axios.post(`/api/chat/${props.novelId}`, {
           message: text,
           refs: refs,
-          modelName: props.modelName,
+          modelName: currentModel.value,
         })
         if (res.data.code === 200) {
           const data = res.data.data
@@ -333,6 +344,10 @@ export default {
             content: data.reply,
             changes: data.changes || undefined,
           })
+          // 工具可能已修改内容，通知父组件刷新
+          if (data.updated) {
+            applyUpdates(data.updated)
+          }
         }
       } catch (e) {
         messages.value.push({
@@ -345,7 +360,19 @@ export default {
       }
     }
 
-    // ─── Apply changes ───
+    // ─── 从工具更新中自动同步内容到父组件 ───
+    function applyUpdates(updated) {
+      if (updated.synopsis != null) emit('apply-synopsis', updated.synopsis)
+      if (updated.outline != null) emit('apply-outline', updated.outline)
+      if (updated.chapters) {
+        updated.chapters.forEach(ch => {
+          if (ch.summary != null) emit('apply-chapter', ch.chapterNumber, 'summary', ch.summary)
+          if (ch.content != null) emit('apply-chapter', ch.chapterNumber, 'content', ch.content)
+        })
+      }
+    }
+
+    // ─── 应用修改 ───
     function applyChange(change) {
       if (change.type === 'synopsis') {
         emit('apply-synopsis', change.content)
@@ -356,7 +383,7 @@ export default {
       }
     }
 
-    // ─── Utils ───
+    // ─── 工具函数 ───
     function formatRefLabel(ref) {
       if (ref.type === 'synopsis') return '@简介'
       if (ref.type === 'outline') return '@大纲'
@@ -382,7 +409,7 @@ export default {
       activeRefs.value.splice(index, 1)
     }
 
-    // ─── Quick Templates ───
+    // ─── 快速模板 ───
     function useTemplate(type) {
       const templates = {
         'synopsis': '请根据作品标题和已有内容，生成一份完整的作品简介。@简介',
@@ -423,19 +450,58 @@ export default {
       })
     }
 
-    // Watch for visibility changes
+    // 同步外部 modelName 变化
+    watch(() => props.modelName, (v) => {
+      currentModel.value = v
+    })
+
+    // 模型切换时通知父组件
+    watch(currentModel, (v) => {
+      emit('update:modelName', v)
+    })
+
+    // 加载历史记录
+    async function loadHistory() {
+      try {
+        const res = await axios.get(`/api/chat/${props.novelId}/history`)
+        if (res.data.code === 200 && res.data.data?.length) {
+          messages.value = res.data.data.map(m => ({
+            role: m.role,
+            content: m.content,
+            refs: m.refs ? JSON.parse(m.refs) : undefined,
+            changes: m.changes ? JSON.parse(m.changes) : undefined,
+          }))
+          scrollToBottom()
+        }
+      } catch (e) {
+        console.error('加载历史失败', e)
+      }
+    }
+
+    async function clearHistory() {
+      try {
+        await axios.delete(`/api/chat/${props.novelId}/history`)
+        messages.value = []
+      } catch (e) {
+        console.error('清空历史失败', e)
+      }
+    }
+
+    // 监听显示状态变化
     watch(() => props.visible, (v) => {
       if (v) {
+        currentModel.value = props.modelName
+        if (messages.value.length === 0) loadHistory()
         nextTick(() => inputRef.value?.focus())
       }
     })
 
     return {
       inputText, messages, loading, messagesRef, inputRef, composing,
-      showAutocomplete, autoIndex, autoRef, activeRefs,
+      showAutocomplete, autoIndex, autoRef, activeRefs, currentModel,
       firstChapterNumber, filteredAutocomplete, canSend,
       onInputChange, onInputKeydown, selectAuto,
-      sendMessage, applyChange,
+      sendMessage, applyChange, clearHistory,
       formatRefLabel, formatChangeLabel, removeRef, renderMarkdown,
       useTemplate,
     }
@@ -444,7 +510,7 @@ export default {
 </script>
 
 <style scoped>
-/* ===== Overlay ===== */
+/* ===== 遮罩层 ===== */
 .chat-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -455,7 +521,7 @@ export default {
   animation: fadeIn 0.15s ease;
 }
 
-/* ===== Panel ===== */
+/* ===== 面板 ===== */
 .chat-panel {
   width: 420px;
   max-width: 90vw;
@@ -476,7 +542,7 @@ export default {
   to { opacity: 1; }
 }
 
-/* ===== Header ===== */
+/* ===== 头部 ===== */
 .chat-header {
   display: flex;
   align-items: center;
@@ -493,7 +559,26 @@ export default {
   font-weight: 600;
   color: var(--color-text);
 }
-.chat-close {
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.model-select {
+  font-size: 0.78rem;
+  padding: 3px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+  cursor: pointer;
+  max-width: 130px;
+}
+.model-select:focus {
+  border-color: var(--color-primary);
+}
+.chat-close, .chat-clear {
   background: none;
   border: none;
   color: var(--color-text-muted);
@@ -502,12 +587,12 @@ export default {
   border-radius: 4px;
   display: flex;
 }
-.chat-close:hover {
+.chat-close:hover, .chat-clear:hover {
   background: var(--color-bg);
   color: var(--color-text);
 }
 
-/* ===== Messages ===== */
+/* ===== 消息列表 ===== */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -517,7 +602,7 @@ export default {
   gap: 0.75rem;
 }
 
-/* Welcome */
+/* 欢迎 */
 .chat-welcome {
   text-align: center;
   padding: 2rem 0.5rem;
@@ -567,7 +652,7 @@ export default {
   font-weight: 500;
 }
 
-/* Quick Templates */
+/* 快速模板 */
 .templates {
   margin: 1rem 0;
 }
@@ -611,7 +696,7 @@ export default {
   color: var(--color-primary);
 }
 
-/* Message bubbles */
+/* 消息气泡 */
 .msg {
   max-width: 100%;
 }
@@ -663,7 +748,7 @@ export default {
   margin: 4px 0;
 }
 
-/* Loading dots */
+/* 加载动画 */
 .loading-dots {
   display: flex;
   gap: 4px;
@@ -684,7 +769,7 @@ export default {
   40% { transform: scale(1); }
 }
 
-/* Ref chips */
+/* 引用标签 */
 .msg-refs {
   display: flex;
   flex-wrap: wrap;
@@ -716,7 +801,7 @@ export default {
   opacity: 1;
 }
 
-/* Changes */
+/* 修改 */
 .msg-changes {
   margin-top: 6px;
   display: flex;
@@ -737,7 +822,7 @@ export default {
   color: var(--color-text-secondary);
 }
 
-/* ===== Autocomplete ===== */
+/* ===== 自动补全 ===== */
 .autocomplete-dropdown {
   position: absolute;
   bottom: 100%;
@@ -778,7 +863,7 @@ export default {
   color: var(--color-text-muted);
 }
 
-/* ===== Input ===== */
+/* ===== 输入区 ===== */
 .chat-input-area {
   border-top: 1px solid var(--color-border);
   padding: 0.75rem;

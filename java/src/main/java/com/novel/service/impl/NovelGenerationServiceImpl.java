@@ -41,7 +41,7 @@ public class NovelGenerationServiceImpl implements NovelGenerationService {
 
         novel.setSynopsis(synopsis);
         novelService.updateNovel(novel.getId(), novel);
-        log.info("Synopsis generated for novel {}", novelId);
+        log.info("作品简介已生成: novelId={}", novelId);
         return synopsis;
     }
 
@@ -61,7 +61,7 @@ public class NovelGenerationServiceImpl implements NovelGenerationService {
 
         novel.setOutline(outline);
         novelService.updateNovel(novel.getId(), novel);
-        log.info("Outline generated for novel {}", novelId);
+        log.info("作品大纲已生成: novelId={}", novelId);
         return outline;
     }
 
@@ -94,7 +94,7 @@ public class NovelGenerationServiceImpl implements NovelGenerationService {
         if (novel.getWorkspaceDir() != null && chapter.getMdDir() != null) {
             markdownStorage.writeChapterSummary(novel.getWorkspaceDir(), chapter.getMdDir(), summary);
         }
-        log.info("Summary generated for chapter {} of novel {}", chapter.getChapterNumber(), novelId);
+        log.info("章节梗概已生成: chapter={}, novelId={}", chapter.getChapterNumber(), novelId);
         return summary;
     }
 
@@ -132,7 +132,7 @@ public class NovelGenerationServiceImpl implements NovelGenerationService {
         if (novel.getWorkspaceDir() != null && chapter.getMdDir() != null) {
             markdownStorage.writeChapterContent(novel.getWorkspaceDir(), chapter.getMdDir(), content);
         }
-        log.info("Content generated for chapter {} of novel {}", chapter.getChapterNumber(), novelId);
+        log.info("章节正文已生成: chapter={}, novelId={}", chapter.getChapterNumber(), novelId);
         return content;
     }
 }

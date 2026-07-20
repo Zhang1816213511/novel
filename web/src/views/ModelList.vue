@@ -23,7 +23,7 @@
       <span class="empty-hint">点击右上角添加你的第一个 AI 模型</span>
     </div>
 
-    <!-- Table -->
+    <!-- 模型表格 -->
     <div v-else class="table-wrapper">
       <table class="model-table">
         <thead>
@@ -64,7 +64,7 @@
       </table>
     </div>
 
-    <!-- Form Modal -->
+    <!-- 表单弹窗 -->
     <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
       <div class="modal">
         <h3>{{ editingModel ? '编辑模型' : '新增模型' }}</h3>
@@ -168,7 +168,7 @@ async function loadModels() {
     const res = await axios.get('/api/models')
     models.value = res.data.data || []
   } catch (e) {
-    console.error('load failed', e)
+    console.error('加载失败', e)
   } finally {
     loading.value = false
   }
@@ -238,7 +238,7 @@ async function saveModel() {
     showForm.value = false
     loadModels()
   } catch (e) {
-    console.error('save failed', e)
+    console.error('保存失败', e)
   }
 }
 
@@ -247,7 +247,7 @@ async function toggleModel(m) {
     await axios.put(`/api/models/${m.id}/toggle`)
     m.enabled = !m.enabled
   } catch (e) {
-    console.error('toggle failed', e)
+    console.error('切换状态失败', e)
   }
 }
 
@@ -257,7 +257,7 @@ async function deleteModel(m) {
     await axios.delete(`/api/models/${m.id}`)
     loadModels()
   } catch (e) {
-    console.error('delete failed', e)
+    console.error('删除失败', e)
   }
 }
 </script>
@@ -268,7 +268,7 @@ async function deleteModel(m) {
   margin: 0 auto;
 }
 
-/* ===== Table Wrapper ===== */
+/* ===== 表格容器 ===== */
 .table-wrapper {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
@@ -303,7 +303,7 @@ async function deleteModel(m) {
   background: #f8fafc;
 }
 
-/* ===== Cells ===== */
+/* ===== 单元格 ===== */
 .cell-name {
   font-weight: 600;
 }
@@ -325,7 +325,7 @@ async function deleteModel(m) {
   margin-right: 0;
 }
 
-/* ===== Provider Badge ===== */
+/* ===== 提供商徽章 ===== */
 .provider-badge {
   display: inline-block;
   padding: 3px 10px;
@@ -346,7 +346,7 @@ async function deleteModel(m) {
   color: #0369a1;
 }
 
-/* ===== Status Dot ===== */
+/* ===== 状态圆点 ===== */
 .status-dot {
   display: inline-block;
   width: 8px;
@@ -363,7 +363,7 @@ async function deleteModel(m) {
   background: var(--color-border);
 }
 
-/* ===== Code ===== */
+/* ===== 代码样式 ===== */
 code {
   background: var(--color-bg);
   padding: 2px 6px;
@@ -372,7 +372,7 @@ code {
   color: var(--color-text-secondary);
 }
 
-/* ===== Form Modal Tweaks ===== */
+/* ===== 表单弹窗微调 ===== */
 .form-divider {
   display: flex;
   align-items: center;
@@ -390,7 +390,7 @@ code {
   gap: 0.5rem 1rem;
 }
 
-/* ===== Action Button Variants ===== */
+/* ===== 操作按钮变体 ===== */
 .btn-ok {
   color: var(--color-success);
   border-color: var(--color-success);
@@ -408,7 +408,7 @@ code {
   color: white;
 }
 
-/* ===== Empty ===== */
+/* ===== 空状态 ===== */
 .empty {
   text-align: center;
   padding: 4rem 2rem;

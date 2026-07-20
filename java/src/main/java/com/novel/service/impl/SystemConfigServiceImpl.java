@@ -54,7 +54,7 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         }
         String normalized = normalizePath(path);
         setConfig(KEY_WORKSPACE_ROOT, normalized);
-        log.info("Workspace root set to: {}", normalized);
+        log.info("工作目录根路径已设置: {}", normalized);
     }
 
     @Override

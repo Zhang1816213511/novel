@@ -57,8 +57,43 @@ CREATE TABLE IF NOT EXISTS novel_character (
     personality     TEXT,                                -- 性格特征
     appearance      TEXT,                                -- 外貌描述
     background      TEXT,                                -- 背景故事
+    faction         TEXT,                                -- 所属势力
+    role_type       TEXT,                                -- 角色类型（NPC / 主角 / 配角）
     image_path      TEXT,                                -- 角色图片路径
     sort_order      INTEGER DEFAULT 0,                   -- 排序
     create_time     DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
     update_time     DATETIME DEFAULT CURRENT_TIMESTAMP   -- 更新时间
+);
+
+-- ─── 势力表 ───────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS faction (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    novel_id        INTEGER NOT NULL,
+    name            TEXT NOT NULL,
+    description     TEXT,
+    create_time     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time     DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─── 势力关系表 ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS faction_relation (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    novel_id            INTEGER NOT NULL,
+    source_faction_id   INTEGER NOT NULL,
+    target_faction_id   INTEGER NOT NULL,
+    relation_type       TEXT NOT NULL,
+    description         TEXT,
+    create_time         DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time         DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+--- ─── 对话历史表 ────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS chat_message (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- 消息 ID（自增主键）
+    novel_id        INTEGER NOT NULL,                    -- 所属作品 ID
+    role            TEXT NOT NULL,                       -- 角色: user / assistant
+    content         TEXT NOT NULL,                       -- 消息内容
+    refs            TEXT,                                -- 引用的文件（JSON）
+    changes         TEXT,                                -- AI 修改的文件变更（JSON）
+    create_time     DATETIME DEFAULT CURRENT_TIMESTAMP   -- 创建时间
 );

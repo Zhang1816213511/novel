@@ -14,17 +14,40 @@ import java.util.List;
 public class ChatResponse {
     /** AI 回复文本 */
     private String reply;
-    /** 实际发生的文件改动 */
+    /** 实际发生的文件改动（旧格式，兼容） */
     private List<FileChange> changes;
+    /** 工具执行后，当前作品的最新内容状态，前端据此刷新 UI */
+    private UpdatedContent updated;
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class FileChange {
-        private String type;          // "synopsis" | "outline" | "chapter"
+        private String type;
         private Integer chapterNumber;
-        private String section;       // "summary" | "content"
-        private String content;       // 修改后的完整内容
+        private String section;
+        private String content;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdatedContent {
+        private String synopsis;
+        private String outline;
+        private List<ChapterState> chapters;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ChapterState {
+        private Integer chapterNumber;
+        private String title;
+        private String summary;
+        private String content;
     }
 }

@@ -14,7 +14,7 @@ public class ChatRequest {
 
     @Data
     public static class FileRef {
-        private String type;       // "synopsis" | "outline" | "chapter"
+        private String type;       // 类型: "synopsis"(简介) | "outline"(大纲) | "chapter"(章节)
         private Integer chapterNumber; // 章节号（当 type=chapter 时）
         private String section;    // "summary" | "content"（当 type=chapter 时）
         private Integer startLine;

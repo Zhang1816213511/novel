@@ -19,7 +19,7 @@ public class GenerationTask {
     @Data
     public static class StageInfo {
         private GenStage stage;
-        private String status; // "waiting", "running", "done", "error"
+        private String status; // 状态: "waiting"(等待) | "running"(运行中) | "done"(完成) | "error"(错误)
         private String message;
     }
 }

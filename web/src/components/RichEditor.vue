@@ -1,9 +1,9 @@
 <template>
   <div :class="['doc-editor-wrapper', { 'is-fullscreen': isFullscreen }]">
-    <!-- Menu Bar (like WPS/Word) -->
+    <!-- 菜单栏（类似 WPS/Word） -->
     <div v-if="showToolbar" class="doc-menubar">
       <div class="menubar-row menubar-main">
-        <!-- Format group -->
+        <!-- 格式组 -->
         <div class="menubar-group">
           <button type="button" class="menubar-btn" @click="toggleBold" :class="{ active: editor?.isActive('bold') }" title="粗体 Ctrl+B">
             <strong>B</strong>
@@ -24,7 +24,7 @@
 
         <span class="menubar-sep"></span>
 
-        <!-- Paragraph group -->
+        <!-- 段落组 -->
         <div class="menubar-group">
           <select class="menubar-select" @change="setHeading" :value="headingLevel">
             <option value="0">正文</option>
@@ -45,7 +45,7 @@
 
         <span class="menubar-sep"></span>
 
-        <!-- Insert group -->
+        <!-- 插入组 -->
         <div class="menubar-group">
           <button type="button" class="menubar-btn" @click="addTable" title="插入表格">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke="var(--color-surface)" stroke-width="2"/></svg>
@@ -60,7 +60,7 @@
 
         <span class="menubar-sep"></span>
 
-        <!-- Align group -->
+        <!-- 对齐组 -->
         <div class="menubar-group">
           <button type="button" class="menubar-btn" @click="setTextAlign('left')" :class="{ active: editor?.isActive({ textAlign: 'left' }) }" title="左对齐">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 6h18M3 10h14M3 14h18M3 18h14"/></svg>
@@ -75,7 +75,7 @@
 
         <span class="menubar-sep"></span>
 
-        <!-- History & View -->
+        <!-- 历史 & 视图 -->
         <div class="menubar-group">
           <button type="button" class="menubar-btn" @click="undo" title="撤销 Ctrl+Z">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
@@ -87,7 +87,7 @@
 
         <div class="menubar-spacer"></div>
 
-        <!-- Fullscreen toggle -->
+        <!-- 全屏切换 -->
         <div class="menubar-group">
           <button type="button" class="menubar-btn" @click="toggleFullscreen" :title="isFullscreen ? '退出全屏 Esc' : '全屏'" :class="{ active: isFullscreen }">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -105,7 +105,7 @@
       </div>
     </div>
 
-    <!-- Editor Content (document page) -->
+    <!-- 编辑器内容（文档页面） -->
     <div class="doc-editor-content" ref="editorContainer">
       <div class="doc-page">
         <editor-content :editor="editor" class="doc-prose" />
@@ -130,7 +130,7 @@ import { Image } from '@tiptap/extension-image'
 import { HorizontalRule } from '@tiptap/extension-horizontal-rule'
 import { Link } from '@tiptap/extension-link'
 
-// ProseMirror decorations for character name highlighting
+// ProseMirror 装饰器：角色名称高亮
 import { Plugin, PluginKey } from 'prosemirror-state'
 import { Decoration, DecorationSet } from 'prosemirror-view'
 
@@ -157,7 +157,7 @@ function createCharacterPlugin(charNames) {
         const resolved = doc.resolve(pos)
         const node = resolved.nodeAfter || doc.nodeAt(pos)
         if (!node || !node.isText) {
-          // Check text nodes before/after
+          // 检查前后文本节点
           for (let d = 0; d <= 2; d++) {
             const n = doc.nodeAt(Math.max(0, pos - d))
             if (n && n.isText) {
@@ -195,7 +195,7 @@ function buildDeco(doc, sorted) {
       while ((idx = text.indexOf(name, idx)) !== -1) {
         const from = pos + idx
         const to = from + name.length
-        // Avoid overlapping decorations
+        // 避免重叠装饰
         const key = `${from}-${to}`
         if (!seen.has(key)) {
           seen.add(key)
@@ -238,19 +238,19 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'characterClick'])
 
-// Wire up character click handler
+// 连接角色点击处理器
 _emitCharacterClick = (name) => emit('characterClick', name)
 
 const isFullscreen = ref(false)
 const editorContainer = ref(null)
 
-// Watch characters prop to update highlight plugin
+// 监听角色属性以更新高亮插件
 watch(() => props.characters, (chars) => {
   if (!editor.value) return
   const names = chars?.map(c => c.name).filter(Boolean) || []
   const plugin = createCharacterPlugin(names)
   if (plugin) {
-    // Remove old, add new
+    // 删除旧的，添加新的
     try { editor.value.unregisterPlugin('character-highlight') } catch {}
     editor.value.registerPlugin(plugin)
   }
@@ -294,7 +294,7 @@ watch(() => props.modelValue, (val) => {
   }
 })
 
-// Format commands
+// 格式化命令
 function toggleBold() { editor.value?.chain().focus().toggleBold().run() }
 function toggleItalic() { editor.value?.chain().focus().toggleItalic().run() }
 function toggleUnderline() { editor.value?.chain().focus().toggleUnderline().run() }
@@ -331,7 +331,7 @@ function toggleFullscreen() {
   setTimeout(() => editor.value?.commands.focus(), 100)
 }
 
-// Keyboard: Escape exits fullscreen
+// 键盘：Esc 退出全屏
 function onKeydown(e) {
   if (e.key === 'Escape' && isFullscreen.value) {
     isFullscreen.value = false
@@ -346,7 +346,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* ===== Wrapper ===== */
+/* ===== 容器 ===== */
 .doc-editor-wrapper {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -368,7 +368,7 @@ onBeforeUnmount(() => {
   background: #e8e8e8;
 }
 
-/* ===== Menu Bar ===== */
+/* ===== 菜单栏 ===== */
 .doc-menubar {
   flex-shrink: 0;
   background: #f8f9fa;
@@ -427,7 +427,7 @@ onBeforeUnmount(() => {
 }
 .menubar-spacer { flex: 1; }
 
-/* ===== Editor Content ===== */
+/* ===== 编辑器内容 ===== */
 .doc-editor-content {
   flex: 1;
   overflow-y: auto;
@@ -436,7 +436,7 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-/* ===== Document Page ===== */
+/* ===== 文档页面 ===== */
 .doc-page {
   width: 100%;
   max-width: 800px;
@@ -447,7 +447,7 @@ onBeforeUnmount(() => {
   transition: all 0.2s;
 }
 
-/* Fullscreen: maximize page */
+/* 全屏：最大化页面 */
 .is-fullscreen .doc-editor-content {
   background: #e8e8e8;
   padding: 30px 20px;
@@ -457,7 +457,7 @@ onBeforeUnmount(() => {
   min-height: 100%;
 }
 
-/* ===== Prose ===== */
+/* ===== 正文排版 ===== */
 :deep(.ProseMirror) {
   padding: 28px 32px;
   outline: none;
@@ -471,7 +471,7 @@ onBeforeUnmount(() => {
   padding: 3px 0;
 }
 
-/* Alternating row backgrounds (subtle) */
+/* 交替行背景（微妙的） */
 :deep(.ProseMirror) {
   counter-reset: prose-line;
 }
@@ -479,7 +479,7 @@ onBeforeUnmount(() => {
   background: rgba(0, 20, 40, 0.03);
 }
 
-/* Placeholder */
+/* 占位符 */
 :deep(.ProseMirror p.is-editor-empty:first-child::before) {
   content: attr(data-placeholder);
   float: left;
@@ -488,18 +488,18 @@ onBeforeUnmount(() => {
   height: 0;
 }
 
-/* Headings */
+/* 标题 */
 :deep(.ProseMirror h1) { font-size: 1.6rem; font-weight: 700; margin: 0.8rem 0 0.4rem; color: #111; }
 :deep(.ProseMirror h2) { font-size: 1.3rem; font-weight: 600; margin: 0.6rem 0 0.3rem; color: #222; }
 :deep(.ProseMirror h3) { font-size: 1.1rem; font-weight: 600; margin: 0.4rem 0 0.2rem; color: #333; }
 
-/* Lists */
+/* 列表 */
 :deep(.ProseMirror ul), :deep(.ProseMirror ol) { padding-left: 1.8rem; }
 :deep(.ProseMirror li) { margin: 2px 0; }
 :deep(.ProseMirror ul li) { list-style-type: disc; }
 :deep(.ProseMirror ol li) { list-style-type: decimal; }
 
-/* Blockquote */
+/* 引用 */
 :deep(.ProseMirror blockquote) {
   border-left: 3px solid var(--color-primary);
   margin: 0.5rem 0;
@@ -509,7 +509,7 @@ onBeforeUnmount(() => {
   border-radius: 0 3px 3px 0;
 }
 
-/* Code inline */
+/* 行内代码 */
 :deep(.ProseMirror code) {
   background: #f0f0f0;
   padding: 2px 6px;
@@ -518,14 +518,14 @@ onBeforeUnmount(() => {
   color: #d63384;
 }
 
-/* Horizontal rule */
+/* 分割线 */
 :deep(.ProseMirror hr) {
   border: none;
   border-top: 1px solid #ddd;
   margin: 1rem 0;
 }
 
-/* Character name references */
+/* 角色名称引用 */
 :deep(.character-ref) {
   color: #1a73e8;
   cursor: pointer;
@@ -536,7 +536,7 @@ onBeforeUnmount(() => {
   background: #e8f0fe;
 }
 
-/* Table */
+/* 表格 */
 :deep(.ProseMirror table) {
   width: 100%;
   border-collapse: collapse;
@@ -562,7 +562,7 @@ onBeforeUnmount(() => {
   background: #e8f0fe;
 }
 
-/* Image */
+/* 图片 */
 :deep(.ProseMirror img) {
   max-width: 100%;
   height: auto;
@@ -570,14 +570,14 @@ onBeforeUnmount(() => {
   margin: 0.5rem 0;
 }
 
-/* Link */
+/* 链接 */
 :deep(.ProseMirror a) {
   color: #1a73e8;
   cursor: pointer;
   text-decoration: underline;
 }
 
-/* Fullscreen bigger text */
+/* 全屏更大字号 */
 .is-fullscreen :deep(.ProseMirror) {
   min-height: calc(100vh - 140px);
   font-size: 1.1rem;

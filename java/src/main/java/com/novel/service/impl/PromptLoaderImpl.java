@@ -31,11 +31,11 @@ public class PromptLoaderImpl implements PromptLoader {
                 String key = filename.replace(".md", "");
                 String content = resource.getContentAsString(StandardCharsets.UTF_8).trim();
                 cache.put(key, content);
-                log.debug("Loaded prompt: {}", key);
+                log.debug("已加载提示词: {}", key);
             }
-            log.info("Loaded {} prompt files", cache.size());
+            log.info("已加载 {} 个提示词文件", cache.size());
         } catch (IOException e) {
-            log.error("Failed to load prompt files", e);
+            log.error("加载提示词文件失败", e);
         }
     }
 
@@ -43,7 +43,7 @@ public class PromptLoaderImpl implements PromptLoader {
     public String get(String name) {
         String prompt = cache.get(name);
         if (prompt == null) {
-            log.warn("Prompt not found: {}", name);
+            log.warn("提示词未找到: {}", name);
             return "";
         }
         return prompt;

@@ -11,6 +11,10 @@
         <div class="char-popup-title">
           <h3>{{ character.name }}</h3>
           <span v-if="character.alias" class="char-popup-alias">{{ character.alias }}</span>
+          <div v-if="character.roleType || character.factionName" class="char-popup-tags">
+            <span v-if="character.roleType" class="char-popup-role" :class="roleClass(character.roleType)">{{ character.roleType }}</span>
+            <span v-if="character.factionName" class="char-popup-faction">{{ character.factionName }}</span>
+          </div>
         </div>
       </div>
 
@@ -41,6 +45,15 @@ defineProps({
   character: { type: Object, default: null }
 })
 defineEmits(['close'])
+
+function roleClass(roleType) {
+  switch (roleType) {
+    case '主角': return 'role-main'
+    case '配角': return 'role-support'
+    case 'NPC': return 'role-npc'
+    default: return ''
+  }
+}
 </script>
 
 <style scoped>
@@ -120,6 +133,26 @@ defineEmits(['close'])
   color: #888;
   margin-top: 2px;
 }
+
+.char-popup-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.char-popup-role,
+.char-popup-faction {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.char-popup-faction {
+  background: #e8daef;
+  color: #6c3483;
+}
+.role-main { background: #fff3cd; color: #856404; }
+.role-support { background: #d1ecf1; color: #0c5460; }
+.role-npc { background: #e2e3e5; color: #383d41; }
 
 .char-popup-section {
   margin-bottom: 1rem;

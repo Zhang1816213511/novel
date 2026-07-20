@@ -105,7 +105,7 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
-/* ===== Config Banner ===== */
+/* ===== 配置横幅 ===== */
 .config-banner {
   display: flex;
   align-items: center;
@@ -127,7 +127,7 @@ onMounted(async () => {
   text-decoration: none;
 }
 
-/* ===== Hero Section ===== */
+/* ===== 英雄区域 ===== */
 .hero {
   text-align: center;
   padding: 3rem 2rem;
@@ -160,7 +160,7 @@ onMounted(async () => {
   justify-content: center;
 }
 
-/* ===== Features ===== */
+/* ===== 功能卡片 ===== */
 .features {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
